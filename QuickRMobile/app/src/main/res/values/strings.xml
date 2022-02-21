@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">QuickR Mobile</string>
+    <string name="scan_qr_code">Scan QR Code</string>
+    <string name="the_quickr_logo">The QuickR Logo</string>
 </resources>
