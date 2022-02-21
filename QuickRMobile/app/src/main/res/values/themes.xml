@@ -2,12 +2,12 @@
     <!-- Base application theme. -->
     <style name="Theme.QuickRMobile" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/peach</item>
-        <item name="colorPrimaryVariant">@color/peach</item>
+        <item name="colorPrimary">@color/peach_light</item>
+        <item name="colorPrimaryVariant">@color/peach_dark</item>
         <item name="colorOnPrimary">@color/white</item>
         <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/peach</item>
-        <item name="colorSecondaryVariant">@color/peach</item>
+        <item name="colorSecondary">@color/peach_light</item>
+        <item name="colorSecondaryVariant">@color/peach_light</item>
         <item name="colorOnSecondary">@color/black</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
