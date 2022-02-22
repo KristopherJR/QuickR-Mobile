@@ -7,6 +7,19 @@
     android:background="#FFD898"
     tools:context=".MainActivity">
 
+
+    <com.budiyev.android.codescanner.CodeScannerView
+        android:id="@+id/scanner_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:autoFocusButtonColor="@color/white"
+        app:autoFocusButtonVisible="true"
+        app:flashButtonColor="@color/white"
+        app:flashButtonVisible="true"
+        app:maskColor="#74000000"
+        tools:layout_editor_absoluteX="0dp"
+        tools:layout_editor_absoluteY="-54dp" />
+
     <ImageView
         android:id="@+id/logo"
         android:layout_width="412dp"
@@ -40,15 +53,15 @@
         app:layout_constraintTop_toBottomOf="@+id/logo"
         app:layout_constraintVertical_bias="1.0" />
 
-    <LinearLayout
-        android:layout_width="409dp"
-        android:layout_height="470dp"
-        android:layout_marginTop="1dp"
-        android:layout_marginBottom="1dp"
-        android:orientation="horizontal"
+    <TextView
+        android:id="@+id/tv_textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Scan Something..."
         app:layout_constraintBottom_toTopOf="@+id/scan_button"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/logo"/>
+        app:layout_constraintTop_toBottomOf="@+id/logo"
+        app:layout_constraintVertical_bias="0.081" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
