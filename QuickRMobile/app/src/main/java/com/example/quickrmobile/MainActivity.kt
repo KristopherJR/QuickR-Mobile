@@ -17,7 +17,13 @@ import com.budiyev.android.codescanner.CodeScannerView
 import com.budiyev.android.codescanner.DecodeCallback
 import com.budiyev.android.codescanner.ErrorCallback
 import com.budiyev.android.codescanner.ScanMode
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.FirebaseFirestore
 import java.util.jar.Manifest
+
+private const val STUDENT_ID_KEY = "users"
+private const val PASSWORD_KEY = "password"
 
 class MainActivity : AppCompatActivity()
 {
@@ -28,6 +34,8 @@ class MainActivity : AppCompatActivity()
     private var idValid: Boolean = false
     private var passwordValid: Boolean = false
 
+    private lateinit var mDocRef : DocumentReference
+
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
@@ -35,6 +43,7 @@ class MainActivity : AppCompatActivity()
         loginButton = findViewById(R.id.login_button)
         studentIDText = findViewById(R.id.textbox_studentID)
         passwordText = findViewById(R.id.textbox_password)
+
 
         loginButton.setOnClickListener{
             checkLoginDetails()
@@ -61,6 +70,26 @@ class MainActivity : AppCompatActivity()
         }
 
         if(idValid && passwordValid){
+
+            mDocRef = FirebaseFirestore.getInstance().collection("users").document(studentIDText.text.toString())
+
+            mDocRef.get()
+                .addOnSuccessListener { document ->
+                    if (document != null) {
+                       if(passwordText.text == document.getString(PASSWORD_KEY)){
+                           val intent = Intent(this,QRScannerActivity::class.java)
+                           startActivity(intent)
+                           // GOT TO HERE!!! WORKING ON GETTING DATABASE PASSWORD TO CHANGE TO NEW WINDOW
+                       }
+
+                    else {
+                        Toast.makeText(this, "Student Does Not Exist!", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+
+
+
              Toast.makeText(this, "Logging in...", Toast.LENGTH_SHORT).show()
             // query database to retrieve the student id
             // query database to retrieve the password associated with the id
