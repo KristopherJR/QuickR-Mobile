@@ -19,90 +19,57 @@ import com.budiyev.android.codescanner.ErrorCallback
 import com.budiyev.android.codescanner.ScanMode
 import java.util.jar.Manifest
 
-
-private const val CAMERA_REQUEST_CODE = 101
-
 class MainActivity : AppCompatActivity()
 {
-    private lateinit var codeScanner: CodeScanner
+    private lateinit var loginButton: Button
+    private lateinit var studentIDText: TextView
+    private lateinit var passwordText: TextView
 
-    private lateinit var scanner_view: CodeScannerView
-    private lateinit var tv_textview: TextView
+    private var idValid: Boolean = false
+    private var passwordValid: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        scanner_view = findViewById(R.id.scanner_view)
-        tv_textview = findViewById(R.id.tv_textView)
+        setContentView(R.layout.login_page)
+        loginButton = findViewById(R.id.login_button)
+        studentIDText = findViewById(R.id.textbox_studentID)
+        passwordText = findViewById(R.id.textbox_password)
 
-        setupPermissions()
-        codeScanner()
-    }
-
-    private fun codeScanner()
-    {
-        codeScanner = CodeScanner(this, scanner_view)
-        codeScanner.apply {
-            camera = CodeScanner.CAMERA_BACK
-            formats = CodeScanner.ALL_FORMATS
-
-            autoFocusMode = AutoFocusMode.SAFE
-            scanMode = ScanMode.CONTINUOUS
-            isAutoFocusEnabled = true
-            isFlashEnabled = false
-
-            decodeCallback = DecodeCallback {
-                runOnUiThread{
-                    tv_textview.text = it.text
-                }
-            }
-
-            errorCallback = ErrorCallback {
-                runOnUiThread{
-                    Log.e("Main", "Camera initialisation error: ${it.message}")
-                }
-            }
-            scanner_view.setOnClickListener{
-                codeScanner.startPreview()
-            }
+        loginButton.setOnClickListener{
+            checkLoginDetails()
         }
     }
 
-    override fun onResume(){
-        super.onResume()
-        codeScanner.startPreview()
-    }
+    private fun checkLoginDetails(){
 
-    override fun onPause() {
-        codeScanner.releaseResources()
-        super.onPause()
-    }
 
-    private fun setupPermissions(){
-        val permission = ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA)
-
-        if(permission != PackageManager.PERMISSION_GRANTED){
-            makeRequest()
+        if(studentIDText.text.count() == 8 && studentIDText.text.matches("^[0-9]+\$".toRegex())){
+            idValid = true
         }
-    }
-
-    private fun makeRequest(){
-        ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.CAMERA), CAMERA_REQUEST_CODE)
-
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray){
-        when (requestCode){
-            CAMERA_REQUEST_CODE -> {
-                if(grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED){
-                    Toast.makeText(this, "You need the camera permission to be able to use this app!", Toast.LENGTH_SHORT).show()
-                }
-                else{
-                    // successful
-                }
-            }
+        else{
+            Toast.makeText(this, "Please Enter a valid ID.", Toast.LENGTH_SHORT).show()
         }
+
+        if(passwordText.text.toString() != ""){
+            passwordValid = true
+        }
+        else{
+            Toast.makeText(this, "Please Enter a Password.", Toast.LENGTH_SHORT).show()
+        }
+
+        if(idValid && passwordValid){
+             Toast.makeText(this, "Logging in...", Toast.LENGTH_SHORT).show()
+            // query database to retrieve the student id
+            // query database to retrieve the password associated with the id
+            // check that the id and password match
+            // if they do, store the username and password locally in the sqlite database
+            // load the QR Scanner screen
+        }
+
     }
+
+
+
 
 }
