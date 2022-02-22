@@ -48,6 +48,7 @@ class MainActivity : AppCompatActivity()
             idValid = true
         }
         else{
+            idValid = false
             Toast.makeText(this, "Please Enter a valid ID.", Toast.LENGTH_SHORT).show()
         }
 
@@ -55,6 +56,7 @@ class MainActivity : AppCompatActivity()
             passwordValid = true
         }
         else{
+            passwordValid = false
             Toast.makeText(this, "Please Enter a Password.", Toast.LENGTH_SHORT).show()
         }
 
