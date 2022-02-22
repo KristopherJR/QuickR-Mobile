@@ -9,4 +9,6 @@
     <color name="white">#FFFFFFFF</color>
     <color name="peach_light">#FFD898</color>
     <color name="peach_dark">#FFB949</color>
+    <color name="hint_text">#592B2421</color>
+
 </resources>
