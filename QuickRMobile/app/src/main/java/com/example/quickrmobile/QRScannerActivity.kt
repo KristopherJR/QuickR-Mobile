@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -23,29 +24,42 @@ import java.util.jar.Manifest
 private const val CAMERA_REQUEST_CODE = 101
 
 // AUTHOR: Kristopher J Randle
-// VERSION: 1.1
+// VERSION: 1.13
 class QRScannerActivity : AppCompatActivity()
 {
+    private lateinit var tvtextview: TextView
+    private lateinit var scanbutton: Button
+    private lateinit var scannerview: CodeScannerView
     private lateinit var codeScanner: CodeScanner
-
-    private lateinit var scanner_view: CodeScannerView
-    private lateinit var tv_textview: TextView
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        scanner_view = findViewById(R.id.scanner_view)
-        tv_textview = findViewById(R.id.tv_textView)
+        tvtextview = findViewById(R.id.tv_textView)
+        scanbutton = findViewById(R.id.scan_button)
+        scannerview = findViewById(R.id.scanner_view)
+        scannerview.visibility = View.GONE
 
+        codeScanner = CodeScanner(this, scannerview)
+
+        scanbutton.setOnClickListener{
+
+            startScanner()
+        }
+    }
+
+    private fun startScanner()
+    {
         setupPermissions()
         codeScanner()
     }
 
     private fun codeScanner()
     {
-        codeScanner = CodeScanner(this, scanner_view)
+        scannerview.visibility = View.VISIBLE
+        tvtextview.visibility = View.VISIBLE
         codeScanner.apply {
             camera = CodeScanner.CAMERA_BACK
             formats = CodeScanner.ALL_FORMATS
@@ -57,7 +71,7 @@ class QRScannerActivity : AppCompatActivity()
 
             decodeCallback = DecodeCallback {
                 runOnUiThread{
-                    tv_textview.text = it.text
+                    tvtextview.text = it.text
                 }
             }
 
@@ -66,7 +80,7 @@ class QRScannerActivity : AppCompatActivity()
                     Log.e("Main", "Camera initialisation error: ${it.message}")
                 }
             }
-            scanner_view.setOnClickListener{
+            scannerview.setOnClickListener{
                 codeScanner.startPreview()
             }
         }

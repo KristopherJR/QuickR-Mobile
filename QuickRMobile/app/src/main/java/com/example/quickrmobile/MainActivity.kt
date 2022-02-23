@@ -16,7 +16,7 @@ private const val STUDENT_ID_KEY = "users"
 private const val PASSWORD_KEY = "password"
 
 // AUTHOR: Kristopher J Randle
-// VERSION: 1.12
+// VERSION: 1.13
 class MainActivity : AppCompatActivity()
 {
     private lateinit var loginButton: Button
