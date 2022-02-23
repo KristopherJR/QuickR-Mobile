@@ -15,6 +15,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 private const val STUDENT_ID_KEY = "users"
 private const val PASSWORD_KEY = "password"
 
+// AUTHOR: Kristopher J Randle
+// VERSION: 1.12
 class MainActivity : AppCompatActivity()
 {
     private lateinit var loginButton: Button
@@ -60,40 +62,37 @@ class MainActivity : AppCompatActivity()
         }
 
         if(idValid && passwordValid){
-
+            Toast.makeText(this, "Logging in...", Toast.LENGTH_SHORT).show()
+            // query database to retrieve the student id
             mDocRef = FirebaseFirestore.getInstance().collection("users").document(studentIDText.text.toString())
 
-            mDocRef.get()
-                .addOnSuccessListener { document ->
-                    if (document != null) {
-                       if(passwordText.text.toString() == document.getString(PASSWORD_KEY).toString()){
-                           val intent = Intent(this,QRScannerActivity::class.java)
-                           intent.putExtra("student_id", studentIDText.text.toString())
-                           startActivity(intent)
-                           // GOT TO HERE!!! WORKING ON GETTING DATABASE PASSWORD TO CHANGE TO NEW WINDOW
-                       }
+            mDocRef.get().addOnSuccessListener{ document ->
+                    if (document != null)
+                    {
+                        if(document.exists())
+                        {
+                            // query database to retrieve the password associated with the id
+                            if(passwordText.text.toString() == document.getString(PASSWORD_KEY).toString())
+                            {
+                                // load the QR Scanner screen
+                                val intent = Intent(this,QRScannerActivity::class.java)
+                                intent.putExtra("student_id", studentIDText.text.toString())
+                                startActivity(intent)
+                            }
 
-                    else {
-                        Toast.makeText(this, document.getString(PASSWORD_KEY), Toast.LENGTH_SHORT).show()
-                        //Toast.makeText(this, passwordText.text, Toast.LENGTH_SHORT).show()
-                        //Toast.makeText(this, "Student Does Not Exist!", Toast.LENGTH_SHORT).show()
+                            else
+                            {
+                                Toast.makeText(this, "Password Incorrect.", Toast.LENGTH_SHORT).show()
+                            }
+
+                        }
+                        else
+                        {
+                            Toast.makeText(this, "Student ID does not exist in database.", Toast.LENGTH_SHORT).show()
+                        }
+
                     }
                 }
-            }
-
-
-
-             Toast.makeText(this, "Logging in...", Toast.LENGTH_SHORT).show()
-            // query database to retrieve the student id
-            // query database to retrieve the password associated with the id
-            // check that the id and password match
-            // if they do, store the username and password locally in the sqlite database
-            // load the QR Scanner screen
         }
-
     }
-
-
-
-
 }

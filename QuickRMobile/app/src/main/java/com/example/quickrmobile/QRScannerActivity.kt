@@ -22,6 +22,8 @@ import java.util.jar.Manifest
 
 private const val CAMERA_REQUEST_CODE = 101
 
+// AUTHOR: Kristopher J Randle
+// VERSION: 1.1
 class QRScannerActivity : AppCompatActivity()
 {
     private lateinit var codeScanner: CodeScanner
