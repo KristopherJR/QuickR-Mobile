@@ -33,6 +33,7 @@ class QRScannerActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
         scanner_view = findViewById(R.id.scanner_view)
         tv_textview = findViewById(R.id.tv_textView)
 

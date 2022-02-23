@@ -9,18 +9,8 @@ import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import com.budiyev.android.codescanner.AutoFocusMode
-import com.budiyev.android.codescanner.CodeScanner
-import com.budiyev.android.codescanner.CodeScannerView
-import com.budiyev.android.codescanner.DecodeCallback
-import com.budiyev.android.codescanner.ErrorCallback
-import com.budiyev.android.codescanner.ScanMode
-import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
-import java.util.jar.Manifest
 
 private const val STUDENT_ID_KEY = "users"
 private const val PASSWORD_KEY = "password"
@@ -76,14 +66,17 @@ class MainActivity : AppCompatActivity()
             mDocRef.get()
                 .addOnSuccessListener { document ->
                     if (document != null) {
-                       if(passwordText.text == document.getString(PASSWORD_KEY)){
+                       if(passwordText.text.toString() == document.getString(PASSWORD_KEY).toString()){
                            val intent = Intent(this,QRScannerActivity::class.java)
+                           intent.putExtra("student_id", studentIDText.text.toString())
                            startActivity(intent)
                            // GOT TO HERE!!! WORKING ON GETTING DATABASE PASSWORD TO CHANGE TO NEW WINDOW
                        }
 
                     else {
-                        Toast.makeText(this, "Student Does Not Exist!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, document.getString(PASSWORD_KEY), Toast.LENGTH_SHORT).show()
+                        //Toast.makeText(this, passwordText.text, Toast.LENGTH_SHORT).show()
+                        //Toast.makeText(this, "Student Does Not Exist!", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
