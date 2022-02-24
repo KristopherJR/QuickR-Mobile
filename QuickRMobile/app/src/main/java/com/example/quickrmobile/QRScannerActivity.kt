@@ -45,7 +45,7 @@ private const val DAY_KEY = "day"
 private const val ENROLLED_SESSION_IDS_KEY = "enrolled_session_ids"
 
 // AUTHOR: Kristopher J Randle
-// VERSION: 1.14
+// VERSION: 1.15
 class QRScannerActivity : AppCompatActivity()
 {
     private lateinit var loggedInStudentID: String
@@ -91,7 +91,6 @@ class QRScannerActivity : AppCompatActivity()
         tvtextview.text = it.text
         splitQRCode = it.text.split("_")
 
-
         qrModuleCode = splitQRCode[0]
 
         var formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
@@ -103,15 +102,15 @@ class QRScannerActivity : AppCompatActivity()
         Log.w(TAG, qrDate.toString())
         Log.w(TAG, qrTime.toString())
 
+        validateQRCode()
     }
 
-    private fun validateQRCode(it: com.google.zxing.Result)
+    private fun validateQRCode()
     {
         // RETRIEVE the enrolled session ids for the student:
         val enrolledSessionIds: List<Int> = studentDocumentSnapshot.get(ENROLLED_SESSION_IDS_KEY) as List<Int> // this works!! - retrieves List<Int> = [1,2,3,4]
         // GET all of the SESSION documents that the USER is enrolled on
         retrieveSessionDocuments(enrolledSessionIds)
-        // FIND the SESSION document that matches the module_code scanned in the QR
 
 
 
@@ -138,15 +137,29 @@ class QRScannerActivity : AppCompatActivity()
                 Log.w(TAG, "Error getting documents: ", exception)
             }
             .addOnCompleteListener {
-                verifySession()
+                locateSessions()
             }
     }
 
-    private fun verifySession()
+    private fun locateSessions()
     {
-       // for(document in sessionsDocuments){
-       //     if(document.getString(MODULE_CODE_KEY) == )
-       // }
+        val relevantModuleSessions: MutableList<DocumentSnapshot> = mutableListOf<DocumentSnapshot>()
+        // FIND the SESSION documents that match the module_code scanned in the QR
+        for(document in sessionsDocuments){
+            if(document.getString(MODULE_CODE_KEY) == qrModuleCode){
+                relevantModuleSessions.add(document)
+            }
+
+        }
+        if(relevantModuleSessions.count() == 0){
+            Toast.makeText(this, "You don't take this module!", Toast.LENGTH_LONG).show()
+            return
+        }
+        for(document in relevantModuleSessions){
+            if(document.getString(DAY_KEY) == LocalDate.now().dayOfWeek.toString()){
+                Toast.makeText(this, "Day of the week matches!", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     private fun startScanner()
