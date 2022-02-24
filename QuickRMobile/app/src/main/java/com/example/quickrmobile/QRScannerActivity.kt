@@ -95,10 +95,13 @@ class QRScannerActivity : AppCompatActivity()
         qrModuleCode = splitQRCode[0]
 
         var formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-        var date = LocalDate.parse(splitQRCode[1], formatter)
+        qrDate = LocalDate.parse(splitQRCode[1], formatter)
+
+        qrTime = LocalTime.parse(splitQRCode[2])
 
         Log.w(TAG, splitQRCode.toString())
-        Log.w(TAG, date.toString())
+        Log.w(TAG, qrDate.toString())
+        Log.w(TAG, qrTime.toString())
 
     }
 
