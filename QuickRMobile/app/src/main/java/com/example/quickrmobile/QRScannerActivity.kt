@@ -1,12 +1,9 @@
 package com.example.quickrmobile
 
 import android.content.ContentValues.TAG
-import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.provider.MediaStore
-import android.text.BoringLayout
 import android.util.Log
 import android.view.View
 import android.widget.Button
@@ -20,20 +17,14 @@ import com.budiyev.android.codescanner.CodeScannerView
 import com.budiyev.android.codescanner.DecodeCallback
 import com.budiyev.android.codescanner.ErrorCallback
 import com.budiyev.android.codescanner.ScanMode
-import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.inject.Deferred
-import java.sql.Time
-import java.text.DateFormat
-import java.text.SimpleDateFormat
+import java.time.Duration
 import java.time.LocalDate
-import java.time.LocalDate.of
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.*
-import java.util.jar.Manifest
-import javax.xml.transform.Result
 
 
 private const val CAMERA_REQUEST_CODE = 101
@@ -42,7 +33,17 @@ private const val SESSIONS_KEY = "sessions"
 private const val SESSION_ID_KEY = "session_id"
 private const val MODULE_CODE_KEY = "module_code"
 private const val DAY_KEY = "day"
+private const val START_TIME_KEY = "start_time"
+private const val END_TIME_KEY = "end_time"
 private const val ENROLLED_SESSION_IDS_KEY = "enrolled_session_ids"
+private const val START_WEEK_KEY = "start_week"
+
+// AttendedSessionLogs
+private const val ATTENDED_SESSION_LOGS_KEY = "AttendedSessionLogs"
+private const val DATE_ATTENDED_KEY = "date_attended"
+private const val LATE_KEY = "late"
+private const val LOG_ID_KEY = "log_id"
+private const val WEEK_ATTENDED_KEY = "week_attended"
 
 // AUTHOR: Kristopher J Randle
 // VERSION: 1.15
@@ -71,8 +72,9 @@ class QRScannerActivity : AppCompatActivity()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        loggedInStudentID = intent.getStringExtra(STUDENT_ID_KEY).toString()
+
         studentDocumentSnapshot = MainActivity.getStudentDocumentSnapshot()
+        loggedInStudentID = studentDocumentSnapshot.get(STUDENT_ID_KEY).toString()
 
         tvtextview = findViewById(R.id.tv_textView)
         scanbutton = findViewById(R.id.scan_button)
@@ -111,13 +113,6 @@ class QRScannerActivity : AppCompatActivity()
         val enrolledSessionIds: List<Int> = studentDocumentSnapshot.get(ENROLLED_SESSION_IDS_KEY) as List<Int> // this works!! - retrieves List<Int> = [1,2,3,4]
         // GET all of the SESSION documents that the USER is enrolled on
         retrieveSessionDocuments(enrolledSessionIds)
-
-
-
-        // STORE the day of that SESSION and check it matches the current day
-        // STORE the start_time and end_time of the SESSION and check the current time is between them
-        // IF all checks pass, CREATE a new AttendedSessionLog Document to register the attendance
-
     }
 
     private fun retrieveSessionDocuments(ids: List<Int>)
@@ -137,30 +132,86 @@ class QRScannerActivity : AppCompatActivity()
                 Log.w(TAG, "Error getting documents: ", exception)
             }
             .addOnCompleteListener {
-                locateSessions()
+                verifySession()
             }
     }
 
-    private fun locateSessions()
+    private fun verifySession()
     {
-        val relevantModuleSessions: MutableList<DocumentSnapshot> = mutableListOf<DocumentSnapshot>()
-        // FIND the SESSION documents that match the module_code scanned in the QR
-        for(document in sessionsDocuments){
-            if(document.getString(MODULE_CODE_KEY) == qrModuleCode){
-                relevantModuleSessions.add(document)
-            }
+        var attendedSession: DocumentSnapshot
+        var validSession: Boolean = false
 
-        }
-        if(relevantModuleSessions.count() == 0){
-            Toast.makeText(this, "You don't take this module!", Toast.LENGTH_LONG).show()
-            return
-        }
-        for(document in relevantModuleSessions){
-            if(document.getString(DAY_KEY) == LocalDate.now().dayOfWeek.toString()){
-                Toast.makeText(this, "Day of the week matches!", Toast.LENGTH_LONG).show()
+        for(document in sessionsDocuments){
+            // FIND the SESSION documents that match the module_code scanned in the QR
+            if(document.getString(MODULE_CODE_KEY) == qrModuleCode){
+                // CHECK that the module session is being held today:
+                if(document.getString(DAY_KEY) == LocalDate.now().dayOfWeek.toString()){
+                    Toast.makeText(this, "Day of the week matches!", Toast.LENGTH_LONG).show()
+                    // STORE the session start and end time as LocalTimes:
+                    val sessionStartTime = LocalTime.parse(document.getString(START_TIME_KEY))
+                    val sessionEndTime = LocalTime.parse(document.getString(END_TIME_KEY))
+
+                    Log.w(TAG, sessionStartTime.toString())
+                    Log.w(TAG, sessionEndTime.toString())
+
+                    // CHECK the time the QR was scanned is between the start_time and end_time of the session:
+                    if(sessionStartTime.isBefore(qrTime) && sessionEndTime.isAfter(qrTime)){
+                        attendedSession = document
+                        validSession = true
+                        var isLate = false
+                        var currentWeek = getCurrentWeek()
+
+                        if(qrTime.isAfter(sessionStartTime.plus(Duration.ofMinutes(15)))){
+                            isLate = true
+                        }
+                        // IF all checks pass, CREATE a new AttendedSessionLog Document to register the attendance:
+                        logAttendance(attendedSession, isLate, currentWeek)
+                    }
+                }
             }
+        }
+
+        if(!validSession){
+            Toast.makeText(this, "You don't attend this session!", Toast.LENGTH_LONG).show()
         }
     }
+
+    private fun logAttendance(attendedSession: DocumentSnapshot, isLate: Boolean, currentWeek: Long){
+        val newAttendanceLog: MutableMap<String, Any> = HashMap()
+        val newLogID = generateRandomID(20)
+
+        newAttendanceLog[DATE_ATTENDED_KEY] = qrDate.toString()
+        newAttendanceLog[LATE_KEY] = isLate
+        newAttendanceLog[LOG_ID_KEY] = newLogID
+        newAttendanceLog[SESSION_ID_KEY] = attendedSession.get(SESSION_ID_KEY).toString()
+        newAttendanceLog[STUDENT_ID_KEY] = loggedInStudentID
+        newAttendanceLog[WEEK_ATTENDED_KEY] = currentWeek
+
+        fireStore.collection(ATTENDED_SESSION_LOGS_KEY)
+            .add(newAttendanceLog)
+            .addOnSuccessListener {
+                Toast.makeText(this, "Attendance Successfully Recorded!", Toast.LENGTH_LONG).show()
+            }
+            .addOnFailureListener{
+                Toast.makeText(this, "Attendance Log Could Not Be Created.", Toast.LENGTH_LONG).show()
+            }
+    }
+
+    private fun generateRandomID(length: Int) : String
+    {
+        val charset = "ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz0123456789"
+        return (1..length)
+            .map { charset.random() }
+            .joinToString("")
+    }
+
+    private fun getCurrentWeek(): Long {
+
+        val daysBetween = ChronoUnit.DAYS.between(LocalDate.parse("2021-09-20"), LocalDate.now())
+        return daysBetween / 7
+    }
+
+
 
     private fun startScanner()
     {

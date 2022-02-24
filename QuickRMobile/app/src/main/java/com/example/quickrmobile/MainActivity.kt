@@ -93,7 +93,6 @@ class MainActivity : AppCompatActivity()
                                 studentDoc = document
                                 // load the QR Scanner screen
                                 val intent = Intent(this,QRScannerActivity::class.java)
-                                intent.putExtra(STUDENT_ID_KEY, studentIDText.text)
                                 startActivity(intent)
                             }
 
