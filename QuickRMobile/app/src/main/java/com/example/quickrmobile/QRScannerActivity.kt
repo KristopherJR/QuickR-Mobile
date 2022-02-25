@@ -18,6 +18,7 @@ import com.budiyev.android.codescanner.DecodeCallback
 import com.budiyev.android.codescanner.ErrorCallback
 import com.budiyev.android.codescanner.ScanMode
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import java.time.Duration
 import java.time.LocalDate
@@ -28,6 +29,7 @@ import java.util.*
 
 
 private const val CAMERA_REQUEST_CODE = 101
+private const val USERS_KEY = "users"
 private const val STUDENT_ID_KEY = "student_id"
 private const val SESSIONS_KEY = "sessions"
 private const val SESSION_ID_KEY = "session_id"
@@ -36,6 +38,7 @@ private const val DAY_KEY = "day"
 private const val START_TIME_KEY = "start_time"
 private const val END_TIME_KEY = "end_time"
 private const val ENROLLED_SESSION_IDS_KEY = "enrolled_session_ids"
+private const val ATTENDED_SESSION_LOG_IDS_KEY = "attended_session_log_ids"
 private const val START_WEEK_KEY = "start_week"
 
 // AttendedSessionLogs
@@ -146,7 +149,7 @@ class QRScannerActivity : AppCompatActivity()
             if(document.getString(MODULE_CODE_KEY) == qrModuleCode){
                 // CHECK that the module session is being held today:
                 if(document.getString(DAY_KEY) == LocalDate.now().dayOfWeek.toString()){
-                    Toast.makeText(this, "Day of the week matches!", Toast.LENGTH_LONG).show()
+                    Log.w(TAG, "Day of the week matches!")
                     // STORE the session start and end time as LocalTimes:
                     val sessionStartTime = LocalTime.parse(document.getString(START_TIME_KEY))
                     val sessionEndTime = LocalTime.parse(document.getString(END_TIME_KEY))
@@ -195,6 +198,9 @@ class QRScannerActivity : AppCompatActivity()
             .addOnFailureListener{
                 Toast.makeText(this, "Attendance Log Could Not Be Created.", Toast.LENGTH_LONG).show()
             }
+
+        val studentDocRef = fireStore.collection(USERS_KEY).document(loggedInStudentID)
+        studentDocRef.update(ATTENDED_SESSION_LOG_IDS_KEY, FieldValue.arrayUnion(newLogID))
     }
 
     private fun generateRandomID(length: Int) : String
