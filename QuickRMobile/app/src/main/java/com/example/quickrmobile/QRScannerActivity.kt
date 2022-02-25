@@ -46,7 +46,7 @@ private const val WEEK_ATTENDED_KEY = "week_attended"
 private const val ACADEMIC_YEAR_START_DATE = "2021-09-20"
 
 // AUTHOR: Kristopher J Randle
-// VERSION: 1.15
+// VERSION: 1.16
 class QRScannerActivity : AppCompatActivity()
 {
     private lateinit var loggedInStudentID: String
@@ -109,6 +109,12 @@ class QRScannerActivity : AppCompatActivity()
 
     private fun validateQRCode()
     {
+        // CHECK the QR code isn't older than 10 seconds:
+        if(LocalTime.now().isAfter(qrTime.plus(Duration.ofSeconds(10)))){
+            Toast.makeText(this, "That QR code was created more than 10 seconds ago!", Toast.LENGTH_LONG).show()
+            return
+        }
+
         // RETRIEVE the enrolled session ids for the student:
         val enrolledSessionIds: List<Int> = studentDocumentSnapshot.get(ENROLLED_SESSION_IDS_KEY) as List<Int> // this works!! - retrieves List<Int> = [1,2,3,4]
         // GET all of the SESSION documents that the USER is enrolled on
