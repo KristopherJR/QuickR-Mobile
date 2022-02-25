@@ -27,7 +27,6 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.*
 
-
 private const val CAMERA_REQUEST_CODE = 101
 private const val USERS_KEY = "users"
 private const val STUDENT_ID_KEY = "student_id"
@@ -39,14 +38,12 @@ private const val START_TIME_KEY = "start_time"
 private const val END_TIME_KEY = "end_time"
 private const val ENROLLED_SESSION_IDS_KEY = "enrolled_session_ids"
 private const val ATTENDED_SESSION_LOG_IDS_KEY = "attended_session_log_ids"
-private const val START_WEEK_KEY = "start_week"
-
-// AttendedSessionLogs
 private const val ATTENDED_SESSION_LOGS_KEY = "AttendedSessionLogs"
 private const val DATE_ATTENDED_KEY = "date_attended"
 private const val LATE_KEY = "late"
 private const val LOG_ID_KEY = "log_id"
 private const val WEEK_ATTENDED_KEY = "week_attended"
+private const val ACADEMIC_YEAR_START_DATE = "2021-09-20"
 
 // AUTHOR: Kristopher J Randle
 // VERSION: 1.15
@@ -213,11 +210,9 @@ class QRScannerActivity : AppCompatActivity()
 
     private fun getCurrentWeek(): Long {
 
-        val daysBetween = ChronoUnit.DAYS.between(LocalDate.parse("2021-09-20"), LocalDate.now())
+        val daysBetween = ChronoUnit.DAYS.between(LocalDate.parse(ACADEMIC_YEAR_START_DATE), LocalDate.now())
         return daysBetween / 7
     }
-
-
 
     private fun startScanner()
     {
