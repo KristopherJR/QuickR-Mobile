@@ -183,9 +183,9 @@ class QRScannerActivity : AppCompatActivity()
         newAttendanceLog[DATE_ATTENDED_KEY] = qrDate.toString()
         newAttendanceLog[LATE_KEY] = isLate
         newAttendanceLog[LOG_ID_KEY] = newLogID
-        newAttendanceLog[SESSION_ID_KEY] = attendedSession.get(SESSION_ID_KEY).toString()
-        newAttendanceLog[STUDENT_ID_KEY] = loggedInStudentID
-        newAttendanceLog[WEEK_ATTENDED_KEY] = currentWeek
+        newAttendanceLog[SESSION_ID_KEY] = (attendedSession.get(SESSION_ID_KEY).toString()).toInt()
+        newAttendanceLog[STUDENT_ID_KEY] = loggedInStudentID.toInt()
+        newAttendanceLog[WEEK_ATTENDED_KEY] = currentWeek.toInt()
 
         fireStore.collection(ATTENDED_SESSION_LOGS_KEY)
             .add(newAttendanceLog)
