@@ -6,6 +6,6 @@
     <string name="student_id">Student ID</string>
     <string name="password">Password</string>
     <string name="student_attendance_monitoring_system">Student Attendance Monitoring System</string>
-    <string name="version_note">18008890, Version: 1.16</string>
+    <string name="version_note">18008890, Version: 1.18</string>
     <string name="student_id_hint"><font size="11"><font color="#592B2421">University of Worcester Student ID...</font></font></string>
 </resources>

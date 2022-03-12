@@ -2,30 +2,28 @@ package com.example.quickrmobile
 
 import android.content.ContentValues.TAG
 import android.content.pm.PackageManager
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.budiyev.android.codescanner.AutoFocusMode
-import com.budiyev.android.codescanner.CodeScanner
-import com.budiyev.android.codescanner.CodeScannerView
-import com.budiyev.android.codescanner.DecodeCallback
-import com.budiyev.android.codescanner.ErrorCallback
-import com.budiyev.android.codescanner.ScanMode
+import com.budiyev.android.codescanner.*
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import java.lang.Exception
 import java.time.Duration
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.*
+import java.util.regex.Pattern
 
 private const val CAMERA_REQUEST_CODE = 101
 private const val USERS_KEY = "users"
@@ -46,7 +44,7 @@ private const val WEEK_ATTENDED_KEY = "week_attended"
 private const val ACADEMIC_YEAR_START_DATE = "2021-09-20"
 
 // AUTHOR: Kristopher J Randle
-// VERSION: 1.16
+// VERSION: 1.18
 class QRScannerActivity : AppCompatActivity()
 {
     private lateinit var loggedInStudentID: String
@@ -91,34 +89,75 @@ class QRScannerActivity : AppCompatActivity()
     private fun deconstructQRCode(it: com.google.zxing.Result)
     {
         tvtextview.text = it.text
-        splitQRCode = it.text.split("_")
 
-        qrModuleCode = splitQRCode[0]
-
-        var formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-        qrDate = LocalDate.parse(splitQRCode[1], formatter)
-
-        qrTime = LocalTime.parse(splitQRCode[2])
-
-        Log.w(TAG, splitQRCode.toString())
-        Log.w(TAG, qrDate.toString())
-        Log.w(TAG, qrTime.toString())
-
-        validateQRCode()
+        if(it.text.contains("_"))
+        {
+            splitQRCode = it.text.split("_")
+            validateQRCode()
+        }
+        else
+        {
+            Toast.makeText(this, "Please scan a valid QuickR code.", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun validateQRCode()
     {
-        // CHECK the QR code isn't older than 10 seconds:
-        if(LocalTime.now().isAfter(qrTime.plus(Duration.ofSeconds(10)))){
-            Toast.makeText(this, "That QR code was created more than 10 seconds ago!", Toast.LENGTH_LONG).show()
-            return
+        val dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+        var dateValid = false
+        var timeValid = false
+
+        // CHECK the date format in the QR matches the QuickR format
+        dateValid = try
+        {
+            LocalDate.parse(splitQRCode[1], dateFormat)
+            true
+        }
+        catch (e: Exception)
+        {
+            e.printStackTrace()
+            false
+        }
+        // CHECK the time format in the QR matches the QuickR format
+        timeValid = try
+        {
+            LocalTime.parse(splitQRCode[2], DateTimeFormatter.ofPattern("HH:mm:ss"))
+            true
+        }
+        catch (e: Exception)
+        {
+            e.printStackTrace()
+            false
         }
 
-        // RETRIEVE the enrolled session ids for the student:
-        val enrolledSessionIds: List<Int> = studentDocumentSnapshot.get(ENROLLED_SESSION_IDS_KEY) as List<Int> // this works!! - retrieves List<Int> = [1,2,3,4]
-        // GET all of the SESSION documents that the USER is enrolled on
-        retrieveSessionDocuments(enrolledSessionIds)
+        if(dateValid && timeValid)
+        {
+            qrModuleCode = splitQRCode[0]
+            qrDate = LocalDate.parse(splitQRCode[1], dateFormat)
+            qrTime = LocalTime.parse(splitQRCode[2])
+
+            Log.w(TAG, splitQRCode.toString())
+            Log.w(TAG, qrDate.toString())
+            Log.w(TAG, qrTime.toString())
+
+            // CHECK the QR code isn't older than 10 seconds:
+            if(LocalTime.now().isAfter(qrTime.plus(Duration.ofSeconds(10))))
+            {
+                Toast.makeText(this, "That QR code was created more than 10 seconds ago!", Toast.LENGTH_LONG).show()
+                return
+            }
+            else
+            {
+                // RETRIEVE the enrolled session ids for the student:
+                val enrolledSessionIds: List<Int> = studentDocumentSnapshot.get(ENROLLED_SESSION_IDS_KEY) as List<Int> // this works!! - retrieves List<Int> = [1,2,3,4]
+                // GET all of the SESSION documents that the USER is enrolled on
+                retrieveSessionDocuments(enrolledSessionIds)
+            }
+        }
+        else
+        {
+            Toast.makeText(this, "Please scan a valid QuickR code.", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun retrieveSessionDocuments(ids: List<Int>)
@@ -204,6 +243,8 @@ class QRScannerActivity : AppCompatActivity()
 
         val studentDocRef = fireStore.collection(USERS_KEY).document(loggedInStudentID)
         studentDocRef.update(ATTENDED_SESSION_LOG_IDS_KEY, FieldValue.arrayUnion(newLogID))
+
+        codeScanner.stopPreview();
     }
 
     private fun generateRandomID(length: Int) : String
@@ -251,9 +292,8 @@ class QRScannerActivity : AppCompatActivity()
                     Log.e("Main", "Camera initialisation error: ${it.message}")
                 }
             }
-            scannerview.setOnClickListener{
-                codeScanner.startPreview()
-            }
+
+            codeScanner.startPreview()
         }
     }
 
