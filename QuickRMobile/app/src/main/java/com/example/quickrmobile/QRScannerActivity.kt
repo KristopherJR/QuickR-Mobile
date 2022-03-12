@@ -15,6 +15,7 @@ import com.budiyev.android.codescanner.*
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import org.w3c.dom.Document
 import java.lang.Exception
 import java.time.Duration
 import java.time.LocalDate
@@ -36,6 +37,7 @@ private const val START_TIME_KEY = "start_time"
 private const val END_TIME_KEY = "end_time"
 private const val ENROLLED_SESSION_IDS_KEY = "enrolled_session_ids"
 private const val ATTENDED_SESSION_LOG_IDS_KEY = "attended_session_log_ids"
+private const val ATTENDED_SESSION_LOG_ID_KEY = "log_id"
 private const val ATTENDED_SESSION_LOGS_KEY = "AttendedSessionLogs"
 private const val DATE_ATTENDED_KEY = "date_attended"
 private const val LATE_KEY = "late"
@@ -56,7 +58,7 @@ class QRScannerActivity : AppCompatActivity()
 
     private lateinit var studentDocumentSnapshot: DocumentSnapshot
     private val sessionsDocuments: MutableList<DocumentSnapshot> = mutableListOf<DocumentSnapshot>()
-
+    private val attendedSessionDocuments: MutableList<DocumentSnapshot> = mutableListOf<DocumentSnapshot>()
     private val fireStore = FirebaseFirestore.getInstance()
 
     private lateinit var splitQRCode: List<String>
@@ -177,8 +179,63 @@ class QRScannerActivity : AppCompatActivity()
                 Log.w(TAG, "Error getting documents: ", exception)
             }
             .addOnCompleteListener {
+                val attendedSessionLogIds: List<Int> = studentDocumentSnapshot.get(ATTENDED_SESSION_LOG_IDS_KEY) as List<Int> // Functioning fine, all active student log ids are retrieved
+                retrieveAttendedSessionDocuments(attendedSessionLogIds)
+            }
+    }
+
+    private fun retrieveAttendedSessionDocuments(ids: List<Int>)
+    {
+        val attendedSessionsRef = fireStore.collection(ATTENDED_SESSION_LOGS_KEY)
+        val formattedQRDate = qrDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        // GET all of the active students attendance logs:
+        attendedSessionsRef
+            .whereIn(ATTENDED_SESSION_LOG_ID_KEY, ids)
+            .get()
+            .addOnSuccessListener { documents ->
+                for(document in documents) {
+                    attendedSessionDocuments.add(document)
+                    Log.d(TAG, "${document.id} => ${document.data}")
+                }
+            }
+            .addOnFailureListener{ exception ->
+                Log.w(TAG, "Error getting documents: ", exception)
+            }
+            .addOnCompleteListener {
+                for(document in attendedSessionDocuments)
+                {
+                    if(document.getString(DATE_ATTENDED_KEY) != formattedQRDate.toString())
+                    {
+                        // REMOVE all session logs apart from today's to filter out the data:
+                        attendedSessionDocuments.remove(document)
+                    }
+                }
+
                 verifySession()
             }
+
+    }
+
+    private fun checkDuplicateAttendance(attendedSession : DocumentSnapshot) : Boolean
+    {
+        var alreadyLoggedAttendance = false
+
+
+        for(document in attendedSessionDocuments) // attendance log count is not 0
+        {
+            val string = document.getString(SESSION_ID_KEY)
+            Toast.makeText(this, string, Toast.LENGTH_LONG).show()
+
+            // CHECK if the student has already created an attendance log for the session they just scanned today
+            if(document.getString(SESSION_ID_KEY)  == attendedSession.getString(SESSION_ID_KEY))
+            {
+
+                // IF it matches, the user has already logged their attendance for this session once
+                alreadyLoggedAttendance = true
+            }
+        }
+
+        return alreadyLoggedAttendance
     }
 
     private fun verifySession()
@@ -202,15 +259,25 @@ class QRScannerActivity : AppCompatActivity()
                     // CHECK the time the QR was scanned is between the start_time and end_time of the session:
                     if(sessionStartTime.isBefore(qrTime) && sessionEndTime.isAfter(qrTime)){
                         attendedSession = document
-                        validSession = true
-                        var isLate = false
-                        var currentWeek = getCurrentWeek()
+                        // ENSURE the student has not already signed in for this session:
+                        if(!checkDuplicateAttendance(attendedSession))
+                        {
 
-                        if(qrTime.isAfter(sessionStartTime.plus(Duration.ofMinutes(15)))){
-                            isLate = true
+                            validSession = true
+                            var isLate = false
+                            var currentWeek = getCurrentWeek()
+
+                            if(qrTime.isAfter(sessionStartTime.plus(Duration.ofMinutes(15)))){
+                                isLate = true
+                            }
+                            // IF all checks pass, CREATE a new AttendedSessionLog Document to register the attendance:
+                            logAttendance(attendedSession, isLate, currentWeek)
                         }
-                        // IF all checks pass, CREATE a new AttendedSessionLog Document to register the attendance:
-                        logAttendance(attendedSession, isLate, currentWeek)
+                        else
+                        {
+                            // Student has already signed in for this session
+                            Toast.makeText(this, "You can not check-in to the same session twice!!!", Toast.LENGTH_LONG).show()
+                        }
                     }
                 }
             }
