@@ -1,6 +1,7 @@
 package com.example.quickrmobile
 
 import android.content.ContentValues.TAG
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
@@ -44,9 +45,10 @@ private const val LATE_KEY = "late"
 private const val LOG_ID_KEY = "log_id"
 private const val WEEK_ATTENDED_KEY = "week_attended"
 private const val ACADEMIC_YEAR_START_DATE = "2021-09-20"
+private const val MINUTES_LATE_KEY = "minutes_late"
 
 // AUTHOR: Kristopher J Randle
-// VERSION: 1.19
+// VERSION: 1.20
 class QRScannerActivity : AppCompatActivity()
 {
     private lateinit var loggedInStudentID: String
@@ -66,8 +68,10 @@ class QRScannerActivity : AppCompatActivity()
     private lateinit var qrModuleCode: String
     private lateinit var qrDate: LocalDate
     private lateinit var qrTime: LocalTime
+    private var minutesLate = 0
 
     private var noAttendedSession = false
+    private var scannerStarted = false
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
@@ -86,7 +90,15 @@ class QRScannerActivity : AppCompatActivity()
         codeScanner = CodeScanner(this, scannerview)
 
         scanbutton.setOnClickListener{
-            startScanner()
+            if(!scannerStarted)
+            {
+                startScanner()
+            }
+            else
+            {
+                onResume()
+                scannerview.visibility = View.VISIBLE
+            }
         }
     }
 
@@ -164,9 +176,22 @@ class QRScannerActivity : AppCompatActivity()
         }
     }
 
+    private fun refreshStudentDocument() {
+        var studentRef =
+            FirebaseFirestore.getInstance().collection(USERS_KEY).document(loggedInStudentID)
+
+        studentRef.get().addOnSuccessListener { document ->
+            if (document != null) {
+                if (document.exists()) {
+                    studentDocumentSnapshot = document
+                }
+            }
+        }
+    }
+
     private fun retrieveSessionDocuments(ids: List<Int>)
     {
-        val sessionsRef = fireStore.collection(SESSIONS_KEY)
+        var sessionsRef = fireStore.collection(SESSIONS_KEY)
 
         sessionsRef
             .whereIn(SESSION_ID_KEY, ids)
@@ -197,7 +222,7 @@ class QRScannerActivity : AppCompatActivity()
 
     private fun retrieveAttendedSessionDocuments(ids: List<Int>)
     {
-        val attendedSessionsRef = fireStore.collection(ATTENDED_SESSION_LOGS_KEY)
+        var attendedSessionsRef = fireStore.collection(ATTENDED_SESSION_LOGS_KEY)
         val formattedQRDate = qrDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
         // GET all of the active students attendance logs:
         attendedSessionsRef
@@ -275,7 +300,8 @@ class QRScannerActivity : AppCompatActivity()
                         // ONLY check for duplicate attendance logs if the student has previously attended sessions:
                         if(noAttendedSession)
                         {
-
+                            minutesLate = qrTime.minute - sessionStartTime.minute
+                            Toast.makeText(this, "You are $minutesLate minutes late", Toast.LENGTH_LONG).show()
                             validSession = true
                             var isLate = false
                             var currentWeek = getCurrentWeek()
@@ -292,7 +318,8 @@ class QRScannerActivity : AppCompatActivity()
                             // ENSURE the student has not already signed in for this session:
                             if(!checkDuplicateAttendance(attendedSession))
                             {
-
+                                minutesLate = qrTime.minute - sessionStartTime.minute
+                                Toast.makeText(this, "You are $minutesLate minutes late", Toast.LENGTH_LONG).show()
                                 validSession = true
                                 var isLate = false
                                 var currentWeek = getCurrentWeek()
@@ -308,6 +335,7 @@ class QRScannerActivity : AppCompatActivity()
                                 validSession = true
                                 // Student has already signed in for this session
                                 Toast.makeText(this, "You can not check-in to the same session twice!!!", Toast.LENGTH_LONG).show()
+
                             }
                         }
                     }
@@ -317,15 +345,18 @@ class QRScannerActivity : AppCompatActivity()
 
         if(!validSession){
             Toast.makeText(this, "You don't attend this session!", Toast.LENGTH_LONG).show()
+
         }
+        onPause()
     }
 
     private fun logAttendance(attendedSession: DocumentSnapshot, isLate: Boolean, currentWeek: Long){
-        val newAttendanceLog: MutableMap<String, Any> = HashMap()
-        val newLogID = generateRandomID(20)
+        var newAttendanceLog: MutableMap<String, Any> = HashMap()
+        var newLogID = generateRandomID(20)
 
         newAttendanceLog[DATE_ATTENDED_KEY] = qrDate.toString()
         newAttendanceLog[LATE_KEY] = isLate
+        newAttendanceLog[MINUTES_LATE_KEY] = minutesLate
         newAttendanceLog[LOG_ID_KEY] = newLogID
         newAttendanceLog[SESSION_ID_KEY] = (attendedSession.get(SESSION_ID_KEY).toString()).toInt()
         newAttendanceLog[STUDENT_ID_KEY] = loggedInStudentID.toInt()
@@ -344,7 +375,9 @@ class QRScannerActivity : AppCompatActivity()
         val studentDocRef = fireStore.collection(USERS_KEY).document(loggedInStudentID)
         studentDocRef.update(ATTENDED_SESSION_LOG_IDS_KEY, FieldValue.arrayUnion(newLogID))
 
-        codeScanner.stopPreview();
+        newAttendanceLog.clear()
+        refreshStudentDocument()
+        onPause()
     }
 
     private fun generateRandomID(length: Int) : String
@@ -369,6 +402,7 @@ class QRScannerActivity : AppCompatActivity()
 
     private fun startCodeScanner()
     {
+        scannerStarted = true
         scannerview.visibility = View.VISIBLE
         tvtextview.visibility = View.VISIBLE
         codeScanner.apply {
@@ -382,6 +416,7 @@ class QRScannerActivity : AppCompatActivity()
 
             decodeCallback = DecodeCallback {
                 runOnUiThread{
+
                     scannerview.visibility = View.GONE
                     deconstructQRCode(it)
                 }
