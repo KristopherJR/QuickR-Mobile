@@ -46,7 +46,7 @@ private const val WEEK_ATTENDED_KEY = "week_attended"
 private const val ACADEMIC_YEAR_START_DATE = "2021-09-20"
 
 // AUTHOR: Kristopher J Randle
-// VERSION: 1.18
+// VERSION: 1.19
 class QRScannerActivity : AppCompatActivity()
 {
     private lateinit var loggedInStudentID: String
@@ -66,6 +66,8 @@ class QRScannerActivity : AppCompatActivity()
     private lateinit var qrModuleCode: String
     private lateinit var qrDate: LocalDate
     private lateinit var qrTime: LocalTime
+
+    private var noAttendedSession = false
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
@@ -180,7 +182,16 @@ class QRScannerActivity : AppCompatActivity()
             }
             .addOnCompleteListener {
                 val attendedSessionLogIds: List<Int> = studentDocumentSnapshot.get(ATTENDED_SESSION_LOG_IDS_KEY) as List<Int> // Functioning fine, all active student log ids are retrieved
-                retrieveAttendedSessionDocuments(attendedSessionLogIds)
+                if(attendedSessionLogIds.count() > 0)
+                {
+                    retrieveAttendedSessionDocuments(attendedSessionLogIds)
+                }
+                else
+                {
+                    // SKIP the attended sessions check and verify the session:
+                        noAttendedSession = true
+                    verifySession()
+                }
             }
     }
 
@@ -202,14 +213,17 @@ class QRScannerActivity : AppCompatActivity()
                 Log.w(TAG, "Error getting documents: ", exception)
             }
             .addOnCompleteListener {
+                val listToRemove = mutableListOf<DocumentSnapshot>()
+
                 for(document in attendedSessionDocuments)
                 {
                     if(document.getString(DATE_ATTENDED_KEY) != formattedQRDate.toString())
                     {
                         // REMOVE all session logs apart from today's to filter out the data:
-                        attendedSessionDocuments.remove(document)
+                        listToRemove.add(document)
                     }
                 }
+                attendedSessionDocuments.removeAll(listToRemove)
 
                 verifySession()
             }
@@ -223,13 +237,11 @@ class QRScannerActivity : AppCompatActivity()
 
         for(document in attendedSessionDocuments) // attendance log count is not 0
         {
-            val string = document.getString(SESSION_ID_KEY)
-            Toast.makeText(this, string, Toast.LENGTH_LONG).show()
+            val string = document.get(SESSION_ID_KEY).toString()
 
             // CHECK if the student has already created an attendance log for the session they just scanned today
-            if(document.getString(SESSION_ID_KEY)  == attendedSession.getString(SESSION_ID_KEY))
+            if(document.get(SESSION_ID_KEY)  == attendedSession.get(SESSION_ID_KEY))
             {
-
                 // IF it matches, the user has already logged their attendance for this session once
                 alreadyLoggedAttendance = true
             }
@@ -245,7 +257,8 @@ class QRScannerActivity : AppCompatActivity()
 
         for(document in sessionsDocuments){
             // FIND the SESSION documents that match the module_code scanned in the QR
-            if(document.getString(MODULE_CODE_KEY) == qrModuleCode){
+            if(document.getString(MODULE_CODE_KEY) == qrModuleCode)
+            {
                 // CHECK that the module session is being held today:
                 if(document.getString(DAY_KEY) == LocalDate.now().dayOfWeek.toString()){
                     Log.w(TAG, "Day of the week matches!")
@@ -259,8 +272,8 @@ class QRScannerActivity : AppCompatActivity()
                     // CHECK the time the QR was scanned is between the start_time and end_time of the session:
                     if(sessionStartTime.isBefore(qrTime) && sessionEndTime.isAfter(qrTime)){
                         attendedSession = document
-                        // ENSURE the student has not already signed in for this session:
-                        if(!checkDuplicateAttendance(attendedSession))
+                        // ONLY check for duplicate attendance logs if the student has previously attended sessions:
+                        if(noAttendedSession)
                         {
 
                             validSession = true
@@ -272,11 +285,30 @@ class QRScannerActivity : AppCompatActivity()
                             }
                             // IF all checks pass, CREATE a new AttendedSessionLog Document to register the attendance:
                             logAttendance(attendedSession, isLate, currentWeek)
+
                         }
                         else
                         {
-                            // Student has already signed in for this session
-                            Toast.makeText(this, "You can not check-in to the same session twice!!!", Toast.LENGTH_LONG).show()
+                            // ENSURE the student has not already signed in for this session:
+                            if(!checkDuplicateAttendance(attendedSession))
+                            {
+
+                                validSession = true
+                                var isLate = false
+                                var currentWeek = getCurrentWeek()
+
+                                if(qrTime.isAfter(sessionStartTime.plus(Duration.ofMinutes(15)))){
+                                    isLate = true
+                                }
+                                // IF all checks pass, CREATE a new AttendedSessionLog Document to register the attendance:
+                                logAttendance(attendedSession, isLate, currentWeek)
+                            }
+                            else
+                            {
+                                validSession = true
+                                // Student has already signed in for this session
+                                Toast.makeText(this, "You can not check-in to the same session twice!!!", Toast.LENGTH_LONG).show()
+                            }
                         }
                     }
                 }
@@ -303,6 +335,7 @@ class QRScannerActivity : AppCompatActivity()
             .add(newAttendanceLog)
             .addOnSuccessListener {
                 Toast.makeText(this, "Attendance Successfully Recorded!", Toast.LENGTH_LONG).show()
+                noAttendedSession = false
             }
             .addOnFailureListener{
                 Toast.makeText(this, "Attendance Log Could Not Be Created.", Toast.LENGTH_LONG).show()
