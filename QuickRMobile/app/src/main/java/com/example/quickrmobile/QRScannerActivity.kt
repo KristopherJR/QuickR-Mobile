@@ -68,6 +68,7 @@ class QRScannerActivity : AppCompatActivity()
     private lateinit var qrModuleCode: String
     private lateinit var qrDate: LocalDate
     private lateinit var qrTime: LocalTime
+    private var qrWaiverLatePenalty = false
     private var minutesLate = 0
 
     private var noAttendedSession = false
@@ -151,10 +152,15 @@ class QRScannerActivity : AppCompatActivity()
             qrModuleCode = splitQRCode[0]
             qrDate = LocalDate.parse(splitQRCode[1], dateFormat)
             qrTime = LocalTime.parse(splitQRCode[2])
+            if(splitQRCode[3] == "T")
+            {
+                qrWaiverLatePenalty = true;
+            }
 
             Log.w(TAG, splitQRCode.toString())
             Log.w(TAG, qrDate.toString())
             Log.w(TAG, qrTime.toString())
+            Log.w(TAG, qrWaiverLatePenalty.toString())
 
             // CHECK the QR code isn't older than 10 seconds:
             if(LocalTime.now().isAfter(qrTime.plus(Duration.ofSeconds(10))))
@@ -301,13 +307,14 @@ class QRScannerActivity : AppCompatActivity()
                         if(noAttendedSession)
                         {
                             minutesLate = qrTime.minute - sessionStartTime.minute
-                            Toast.makeText(this, "You are $minutesLate minutes late", Toast.LENGTH_LONG).show()
+
                             validSession = true
                             var isLate = false
                             var currentWeek = getCurrentWeek()
-
-                            if(qrTime.isAfter(sessionStartTime.plus(Duration.ofMinutes(15)))){
+                            // ONLY register as being late if 15 minutes have passed and the late penalty has NOT been waivered:
+                            if(qrTime.isAfter(sessionStartTime.plus(Duration.ofMinutes(15))) && !qrWaiverLatePenalty){
                                 isLate = true
+                                Toast.makeText(this, "You are $minutesLate minutes late", Toast.LENGTH_LONG).show()
                             }
                             // IF all checks pass, CREATE a new AttendedSessionLog Document to register the attendance:
                             logAttendance(attendedSession, isLate, currentWeek)
@@ -323,8 +330,8 @@ class QRScannerActivity : AppCompatActivity()
                                 validSession = true
                                 var isLate = false
                                 var currentWeek = getCurrentWeek()
-
-                                if(qrTime.isAfter(sessionStartTime.plus(Duration.ofMinutes(15)))){
+                                // ONLY register as being late if 15 minutes have passed and the late penalty has NOT been waivered:
+                                if(qrTime.isAfter(sessionStartTime.plus(Duration.ofMinutes(15))) && !qrWaiverLatePenalty){
                                     isLate = true
                                 }
                                 // IF all checks pass, CREATE a new AttendedSessionLog Document to register the attendance:
@@ -452,7 +459,6 @@ class QRScannerActivity : AppCompatActivity()
 
     private fun makeRequest(){
         ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.CAMERA), CAMERA_REQUEST_CODE)
-
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray){
