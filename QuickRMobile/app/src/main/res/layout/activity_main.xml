@@ -7,17 +7,6 @@
     android:background="#FFD898"
     tools:context=".MainActivity">
 
-    <com.budiyev.android.codescanner.CodeScannerView
-        android:id="@+id/scanner_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:autoFocusButtonColor="@color/white"
-        app:autoFocusButtonVisible="true"
-        app:flashButtonColor="@color/white"
-        app:flashButtonVisible="true"
-        app:maskColor="#74000000"
-        tools:layout_editor_absoluteX="0dp"
-        tools:layout_editor_absoluteY="-54dp" />
 
     <ImageView
         android:id="@+id/logo"
@@ -56,9 +45,9 @@
         android:id="@+id/tv_textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:visibility="gone"
         android:text="Scan Something..."
         android:textColor="#FFFFFF"
+        android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@+id/scan_button"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -82,5 +71,127 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="1.0" />
+
+
+    <ImageView
+        android:id="@+id/imageViewAttendance"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="92dp"
+        android:layout_marginTop="22dp"
+        android:layout_marginBottom="354dp"
+        app:layout_constraintBottom_toTopOf="@+id/scan_button"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/logo"
+        app:srcCompat="@drawable/attendance" />
+
+    <ImageView
+        android:id="@+id/imageViewPunctuality"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="22dp"
+        android:layout_marginBottom="354dp"
+        app:layout_constraintBottom_toTopOf="@+id/scan_button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.212"
+        app:layout_constraintStart_toEndOf="@+id/imageViewAttendance"
+        app:layout_constraintTop_toBottomOf="@+id/logo"
+        app:srcCompat="@drawable/punctuality" />
+
+    <TextView
+        android:id="@+id/textViewAttendancePercentage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        android:layout_marginTop="16dp"
+        android:text="50%"
+        app:layout_constraintEnd_toEndOf="@+id/imageViewAttendance"
+        app:layout_constraintStart_toStartOf="@+id/imageViewAttendance"
+        app:layout_constraintTop_toBottomOf="@+id/imageViewAttendance" />
+
+    <TextView
+        android:id="@+id/textViewAttendance"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Attendance"
+        app:layout_constraintBottom_toTopOf="@+id/imageViewAttendance"
+        app:layout_constraintEnd_toEndOf="@+id/imageViewAttendance"
+        app:layout_constraintStart_toStartOf="@+id/imageViewAttendance" />
+
+    <TextView
+        android:id="@+id/textViewPunctuality"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Punctuality"
+        app:layout_constraintBottom_toTopOf="@+id/imageViewPunctuality"
+        app:layout_constraintEnd_toEndOf="@+id/imageViewPunctuality"
+        app:layout_constraintStart_toStartOf="@+id/imageViewPunctuality" />
+
+
+    <TextView
+        android:id="@+id/textViewPunctualityPercentage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="50%"
+        app:layout_constraintEnd_toEndOf="@+id/imageViewPunctuality"
+        app:layout_constraintStart_toStartOf="@+id/imageViewPunctuality"
+        app:layout_constraintTop_toBottomOf="@+id/imageViewPunctuality" />
+
+    <TextView
+        android:id="@+id/textViewCurrentSession"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Current Session"
+        android:textSize="8pt"
+        app:layout_constraintBottom_toTopOf="@+id/scan_button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/logo"
+        app:layout_constraintVertical_bias="0.418" />
+
+    <TextView
+        android:id="@+id/textViewSessionCode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="COMP3401"
+        app:layout_constraintEnd_toEndOf="@+id/textViewCurrentSession"
+        app:layout_constraintStart_toStartOf="@+id/textViewCurrentSession"
+        app:layout_constraintTop_toBottomOf="@+id/textViewCurrentSession" />
+
+    <TextView
+        android:id="@+id/textViewSessionDate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="25/03/2022"
+        app:layout_constraintEnd_toEndOf="@+id/textViewCurrentSession"
+        app:layout_constraintHorizontal_bias="0.508"
+        app:layout_constraintStart_toStartOf="@+id/textViewCurrentSession"
+        app:layout_constraintTop_toBottomOf="@+id/textViewSessionCode" />
+
+    <TextView
+        android:id="@+id/textViewSessionTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="13:15"
+        app:layout_constraintEnd_toEndOf="@+id/textViewCurrentSession"
+        app:layout_constraintHorizontal_bias="0.505"
+        app:layout_constraintStart_toStartOf="@+id/textViewCurrentSession"
+        app:layout_constraintTop_toBottomOf="@+id/textViewSessionDate" />
+
+    <ImageView
+        android:id="@+id/imageViewAttendedIcon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        app:layout_constraintEnd_toEndOf="@+id/textViewCurrentSession"
+        app:layout_constraintStart_toStartOf="@+id/textViewCurrentSession"
+        app:layout_constraintTop_toBottomOf="@+id/textViewSessionTime"
+        app:srcCompat="@drawable/cross" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
