@@ -7,6 +7,17 @@
     android:background="#FFD898"
     tools:context=".MainActivity">
 
+    <com.budiyev.android.codescanner.CodeScannerView
+        android:id="@+id/scanner_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:autoFocusButtonColor="@color/white"
+        app:autoFocusButtonVisible="true"
+        app:flashButtonColor="@color/white"
+        app:flashButtonVisible="true"
+        app:maskColor="#74000000"
+        tools:layout_editor_absoluteX="-16dp"
+        tools:layout_editor_absoluteY="165dp" />
 
     <ImageView
         android:id="@+id/logo"
@@ -22,6 +33,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.0"
         app:srcCompat="@drawable/quickr_logo" />
+
 
     <Button
         android:id="@+id/scan_button"
@@ -77,12 +89,14 @@
         android:id="@+id/imageViewAttendance"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="92dp"
         android:layout_marginTop="22dp"
         android:layout_marginBottom="354dp"
         app:layout_constraintBottom_toTopOf="@+id/scan_button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.323"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/logo"
+        app:layout_constraintVertical_bias="0.0"
         app:srcCompat="@drawable/attendance" />
 
     <ImageView
@@ -93,9 +107,10 @@
         android:layout_marginBottom="354dp"
         app:layout_constraintBottom_toTopOf="@+id/scan_button"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.212"
-        app:layout_constraintStart_toEndOf="@+id/imageViewAttendance"
+        app:layout_constraintHorizontal_bias="0.682"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/logo"
+        app:layout_constraintVertical_bias="0.0"
         app:srcCompat="@drawable/punctuality" />
 
     <TextView
@@ -143,7 +158,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Current Session"
-        android:textSize="8pt"
+        android:textSize="10pt"
         app:layout_constraintBottom_toTopOf="@+id/scan_button"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.498"
@@ -152,7 +167,7 @@
         app:layout_constraintVertical_bias="0.418" />
 
     <TextView
-        android:id="@+id/textViewSessionCode"
+        android:id="@+id/textViewModuleCode"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
@@ -170,7 +185,7 @@
         app:layout_constraintEnd_toEndOf="@+id/textViewCurrentSession"
         app:layout_constraintHorizontal_bias="0.508"
         app:layout_constraintStart_toStartOf="@+id/textViewCurrentSession"
-        app:layout_constraintTop_toBottomOf="@+id/textViewSessionCode" />
+        app:layout_constraintTop_toBottomOf="@+id/textViewModuleCode" />
 
     <TextView
         android:id="@+id/textViewSessionTime"
@@ -192,6 +207,18 @@
         app:layout_constraintStart_toStartOf="@+id/textViewCurrentSession"
         app:layout_constraintTop_toBottomOf="@+id/textViewSessionTime"
         app:srcCompat="@drawable/cross" />
+
+    <TextView
+        android:id="@+id/tvTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="TextView"
+        app:layout_constraintBottom_toTopOf="@+id/scan_button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/imageViewAttendedIcon" />
+
+
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

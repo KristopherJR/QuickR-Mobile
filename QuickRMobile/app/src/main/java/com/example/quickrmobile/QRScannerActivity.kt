@@ -16,6 +16,7 @@ import com.budiyev.android.codescanner.*
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.type.DateTime
 import org.w3c.dom.Document
 import java.lang.Exception
 import java.time.Duration
@@ -23,6 +24,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.time.temporal.ChronoUnit
 import java.util.*
 import java.util.regex.Pattern
@@ -53,12 +55,19 @@ class QRScannerActivity : AppCompatActivity()
 {
     private lateinit var loggedInStudentID: String
 
-    private lateinit var tvtextview: TextView
+    private lateinit var tvTextView: TextView
+    private lateinit var tvAttendancePercentage: TextView
+    private lateinit var tvPunctualityPercentage: TextView
+    private lateinit var tvModuleCode: TextView
+    private lateinit var tvSessionDate: TextView
+    private lateinit var tvSessionTime: TextView
+
     private lateinit var scanbutton: Button
     private lateinit var scannerview: CodeScannerView
     private lateinit var codeScanner: CodeScanner
 
     private lateinit var studentDocumentSnapshot: DocumentSnapshot
+    private lateinit var currentSessionDocumentSnapshot: DocumentSnapshot
     private val sessionsDocuments: MutableList<DocumentSnapshot> = mutableListOf<DocumentSnapshot>()
     private val attendedSessionDocuments: MutableList<DocumentSnapshot> = mutableListOf<DocumentSnapshot>()
     private val fireStore = FirebaseFirestore.getInstance()
@@ -79,16 +88,23 @@ class QRScannerActivity : AppCompatActivity()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-
         studentDocumentSnapshot = MainActivity.getStudentDocumentSnapshot()
         loggedInStudentID = studentDocumentSnapshot.get(STUDENT_ID_KEY).toString()
 
-        tvtextview = findViewById(R.id.tv_textView)
+        tvTextView = findViewById(R.id.tvTextView)
+        tvAttendancePercentage = findViewById(R.id.textViewAttendancePercentage)
+        tvPunctualityPercentage = findViewById(R.id.textViewPunctualityPercentage)
+        tvModuleCode = findViewById(R.id.textViewModuleCode)
+        tvSessionDate = findViewById(R.id.textViewSessionDate)
+        tvSessionTime = findViewById(R.id.textViewSessionTime)
+
         scanbutton = findViewById(R.id.scan_button)
         scannerview = findViewById(R.id.scanner_view)
         scannerview.visibility = View.GONE
 
         codeScanner = CodeScanner(this, scannerview)
+
+        initialiseMetrics()
 
         scanbutton.setOnClickListener{
             if(!scannerStarted)
@@ -103,9 +119,114 @@ class QRScannerActivity : AppCompatActivity()
         }
     }
 
+    private fun initialiseMetrics()
+    {
+        // RETRIEVE the enrolled session ids for the student:
+        val enrolledSessionIds: List<Int> = studentDocumentSnapshot.get(ENROLLED_SESSION_IDS_KEY) as List<Int> // this works!! - retrieves List<Int> = [1,2,3,4]
+        // GET all of the SESSION documents that the USER is enrolled on
+        retrieveSessionDocuments(enrolledSessionIds)
+
+
+    }
+
+    private fun updateMetrics()
+    {
+        if(::currentSessionDocumentSnapshot.isInitialized)
+        {
+            tvModuleCode.text = currentSessionDocumentSnapshot.getString(MODULE_CODE_KEY)
+            tvSessionDate.text = LocalDate.now().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)).toString()
+            tvSessionTime.text = currentSessionDocumentSnapshot.getString(START_TIME_KEY) + " - " + currentSessionDocumentSnapshot.getString(END_TIME_KEY)
+        }
+        else
+        {
+            tvModuleCode.text = ""
+            tvSessionDate.text = "No timetabled session"
+            tvSessionTime.text = ""
+        }
+    }
+
+    private fun retrieveSessionDocuments(ids: List<Int>)
+    {
+        var sessionsRef = fireStore.collection(SESSIONS_KEY)
+
+        sessionsRef
+            .whereIn(SESSION_ID_KEY, ids)
+            .get()
+            .addOnSuccessListener { documents ->
+                for(document in documents) {
+                    sessionsDocuments.add(document)
+                    Log.d(TAG, "${document.id} => ${document.data}")
+                }
+            }
+            .addOnFailureListener{ exception ->
+                Log.w(TAG, "Error getting documents: ", exception)
+            }
+            .addOnCompleteListener {
+                for(document in sessionsDocuments)
+                {
+                    if(document.getString(DAY_KEY) == LocalDate.now().dayOfWeek.toString())
+                    {
+                        val sessionStartTime = LocalTime.parse(document.getString(START_TIME_KEY))
+                        val sessionEndTime = LocalTime.parse(document.getString(END_TIME_KEY))
+
+                        Log.w(TAG, sessionStartTime.toString())
+                        Log.w(TAG, sessionEndTime.toString())
+
+                        if (sessionStartTime.isBefore(LocalTime.now()) && sessionEndTime.isAfter(LocalTime.now()))
+                        {
+                            currentSessionDocumentSnapshot = document
+
+                        }
+
+                        updateMetrics()
+                    }
+                }
+
+                val attendedSessionLogIds: List<Int> = studentDocumentSnapshot.get(ATTENDED_SESSION_LOG_IDS_KEY) as List<Int> // Functioning fine, all active student log ids are retrieved
+                if(attendedSessionLogIds.count() == 0)
+                {
+                    // SKIP the attended sessions check and verify the session:
+                    noAttendedSession = true
+                }
+            }
+    }
+
+    private fun retrieveAttendedSessionDocuments(ids: List<Int>)
+    {
+        var attendedSessionsRef = fireStore.collection(ATTENDED_SESSION_LOGS_KEY)
+        val formattedQRDate = qrDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        // GET all of the active students attendance logs:
+        attendedSessionsRef
+            .whereIn(ATTENDED_SESSION_LOG_ID_KEY, ids)
+            .get()
+            .addOnSuccessListener { documents ->
+                for(document in documents) {
+                    attendedSessionDocuments.add(document)
+                    Log.d(TAG, "${document.id} => ${document.data}")
+                }
+            }
+            .addOnFailureListener{ exception ->
+                Log.w(TAG, "Error getting documents: ", exception)
+            }
+            .addOnCompleteListener {
+                val listToRemove = mutableListOf<DocumentSnapshot>()
+
+                for(document in attendedSessionDocuments)
+                {
+                    if(document.getString(DATE_ATTENDED_KEY) != formattedQRDate.toString())
+                    {
+                        // REMOVE all session logs apart from today's to filter out the data:
+                        listToRemove.add(document)
+                    }
+                }
+                attendedSessionDocuments.removeAll(listToRemove)
+            }
+
+    }
+
     private fun deconstructQRCode(it: com.google.zxing.Result)
     {
-        tvtextview.text = it.text
+        tvTextView.text = it.text
 
         if(it.text.contains("_"))
         {
@@ -170,10 +291,7 @@ class QRScannerActivity : AppCompatActivity()
             }
             else
             {
-                // RETRIEVE the enrolled session ids for the student:
-                val enrolledSessionIds: List<Int> = studentDocumentSnapshot.get(ENROLLED_SESSION_IDS_KEY) as List<Int> // this works!! - retrieves List<Int> = [1,2,3,4]
-                // GET all of the SESSION documents that the USER is enrolled on
-                retrieveSessionDocuments(enrolledSessionIds)
+                verifySession()
             }
         }
         else
@@ -195,71 +313,7 @@ class QRScannerActivity : AppCompatActivity()
         }
     }
 
-    private fun retrieveSessionDocuments(ids: List<Int>)
-    {
-        var sessionsRef = fireStore.collection(SESSIONS_KEY)
 
-        sessionsRef
-            .whereIn(SESSION_ID_KEY, ids)
-            .get()
-            .addOnSuccessListener { documents ->
-                for(document in documents) {
-                    sessionsDocuments.add(document)
-                    Log.d(TAG, "${document.id} => ${document.data}")
-                }
-            }
-            .addOnFailureListener{ exception ->
-                Log.w(TAG, "Error getting documents: ", exception)
-            }
-            .addOnCompleteListener {
-                val attendedSessionLogIds: List<Int> = studentDocumentSnapshot.get(ATTENDED_SESSION_LOG_IDS_KEY) as List<Int> // Functioning fine, all active student log ids are retrieved
-                if(attendedSessionLogIds.count() > 0)
-                {
-                    retrieveAttendedSessionDocuments(attendedSessionLogIds)
-                }
-                else
-                {
-                    // SKIP the attended sessions check and verify the session:
-                        noAttendedSession = true
-                    verifySession()
-                }
-            }
-    }
-
-    private fun retrieveAttendedSessionDocuments(ids: List<Int>)
-    {
-        var attendedSessionsRef = fireStore.collection(ATTENDED_SESSION_LOGS_KEY)
-        val formattedQRDate = qrDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-        // GET all of the active students attendance logs:
-        attendedSessionsRef
-            .whereIn(ATTENDED_SESSION_LOG_ID_KEY, ids)
-            .get()
-            .addOnSuccessListener { documents ->
-                for(document in documents) {
-                    attendedSessionDocuments.add(document)
-                    Log.d(TAG, "${document.id} => ${document.data}")
-                }
-            }
-            .addOnFailureListener{ exception ->
-                Log.w(TAG, "Error getting documents: ", exception)
-            }
-            .addOnCompleteListener {
-                val listToRemove = mutableListOf<DocumentSnapshot>()
-
-                for(document in attendedSessionDocuments)
-                {
-                    if(document.getString(DATE_ATTENDED_KEY) != formattedQRDate.toString())
-                    {
-                        // REMOVE all session logs apart from today's to filter out the data:
-                        listToRemove.add(document)
-                    }
-                }
-                attendedSessionDocuments.removeAll(listToRemove)
-
-                verifySession()
-            }
-
-    }
 
     private fun checkDuplicateAttendance(attendedSession : DocumentSnapshot) : Boolean
     {
@@ -411,7 +465,7 @@ class QRScannerActivity : AppCompatActivity()
     {
         scannerStarted = true
         scannerview.visibility = View.VISIBLE
-        tvtextview.visibility = View.VISIBLE
+        tvTextView.visibility = View.VISIBLE
         codeScanner.apply {
             camera = CodeScanner.CAMERA_BACK
             formats = CodeScanner.ALL_FORMATS
