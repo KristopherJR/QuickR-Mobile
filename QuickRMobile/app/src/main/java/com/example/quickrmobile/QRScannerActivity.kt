@@ -35,6 +35,7 @@ private const val STUDENT_ID_KEY = "student_id"
 private const val SESSIONS_KEY = "sessions"
 private const val SESSION_ID_KEY = "session_id"
 private const val MODULE_CODE_KEY = "module_code"
+private const val SESSION_TUTOR_KEY = "session_tutor"
 private const val DAY_KEY = "day"
 private const val START_TIME_KEY = "start_time"
 private const val END_TIME_KEY = "end_time"
@@ -61,6 +62,7 @@ class QRScannerActivity : AppCompatActivity()
     private lateinit var tvModuleCode: TextView
     private lateinit var tvSessionDate: TextView
     private lateinit var tvSessionTime: TextView
+    private lateinit var tvSessionTutor: TextView
 
     private lateinit var scanbutton: Button
     private lateinit var scannerview: CodeScannerView
@@ -97,6 +99,7 @@ class QRScannerActivity : AppCompatActivity()
         tvModuleCode = findViewById(R.id.textViewModuleCode)
         tvSessionDate = findViewById(R.id.textViewSessionDate)
         tvSessionTime = findViewById(R.id.textViewSessionTime)
+        tvSessionTutor = findViewById(R.id.textViewSessionTutor)
 
         scanbutton = findViewById(R.id.scan_button)
         scannerview = findViewById(R.id.scanner_view)
@@ -125,8 +128,6 @@ class QRScannerActivity : AppCompatActivity()
         val enrolledSessionIds: List<Int> = studentDocumentSnapshot.get(ENROLLED_SESSION_IDS_KEY) as List<Int> // this works!! - retrieves List<Int> = [1,2,3,4]
         // GET all of the SESSION documents that the USER is enrolled on
         retrieveSessionDocuments(enrolledSessionIds)
-
-
     }
 
     private fun updateMetrics()
@@ -136,12 +137,14 @@ class QRScannerActivity : AppCompatActivity()
             tvModuleCode.text = currentSessionDocumentSnapshot.getString(MODULE_CODE_KEY)
             tvSessionDate.text = LocalDate.now().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)).toString()
             tvSessionTime.text = currentSessionDocumentSnapshot.getString(START_TIME_KEY) + " - " + currentSessionDocumentSnapshot.getString(END_TIME_KEY)
+            tvSessionTutor.text = currentSessionDocumentSnapshot.getString(SESSION_TUTOR_KEY)
         }
         else
         {
             tvModuleCode.text = ""
             tvSessionDate.text = "No timetabled session"
             tvSessionTime.text = ""
+            tvSessionTutor.text = ""
         }
     }
 
@@ -187,6 +190,10 @@ class QRScannerActivity : AppCompatActivity()
                 {
                     // SKIP the attended sessions check and verify the session:
                     noAttendedSession = true
+                }
+                else
+                {
+                    retrieveSessionDocuments(attendedSessionLogIds)
                 }
             }
     }
@@ -312,8 +319,6 @@ class QRScannerActivity : AppCompatActivity()
             }
         }
     }
-
-
 
     private fun checkDuplicateAttendance(attendedSession : DocumentSnapshot) : Boolean
     {

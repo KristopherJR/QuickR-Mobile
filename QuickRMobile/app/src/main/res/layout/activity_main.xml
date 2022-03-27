@@ -7,17 +7,6 @@
     android:background="#FFD898"
     tools:context=".MainActivity">
 
-    <com.budiyev.android.codescanner.CodeScannerView
-        android:id="@+id/scanner_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:autoFocusButtonColor="@color/white"
-        app:autoFocusButtonVisible="true"
-        app:flashButtonColor="@color/white"
-        app:flashButtonVisible="true"
-        app:maskColor="#74000000"
-        tools:layout_editor_absoluteX="-16dp"
-        tools:layout_editor_absoluteY="165dp" />
 
     <ImageView
         android:id="@+id/logo"
@@ -170,7 +159,7 @@
         android:id="@+id/textViewModuleCode"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="16dp"
         android:text="COMP3401"
         app:layout_constraintEnd_toEndOf="@+id/textViewCurrentSession"
         app:layout_constraintStart_toStartOf="@+id/textViewCurrentSession"
@@ -180,10 +169,10 @@
         android:id="@+id/textViewSessionDate"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="16dp"
         android:text="25/03/2022"
         app:layout_constraintEnd_toEndOf="@+id/textViewCurrentSession"
-        app:layout_constraintHorizontal_bias="0.508"
+        app:layout_constraintHorizontal_bias="0.505"
         app:layout_constraintStart_toStartOf="@+id/textViewCurrentSession"
         app:layout_constraintTop_toBottomOf="@+id/textViewModuleCode" />
 
@@ -191,21 +180,32 @@
         android:id="@+id/textViewSessionTime"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="16dp"
         android:text="13:15"
         app:layout_constraintEnd_toEndOf="@+id/textViewCurrentSession"
-        app:layout_constraintHorizontal_bias="0.505"
+        app:layout_constraintHorizontal_bias="0.503"
         app:layout_constraintStart_toStartOf="@+id/textViewCurrentSession"
         app:layout_constraintTop_toBottomOf="@+id/textViewSessionDate" />
+
+    <TextView
+        android:id="@+id/textViewSessionTutor"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Price"
+        app:layout_constraintEnd_toEndOf="@+id/textViewCurrentSession"
+        app:layout_constraintHorizontal_bias="0.503"
+        app:layout_constraintStart_toStartOf="@+id/textViewCurrentSession"
+        app:layout_constraintTop_toBottomOf="@+id/textViewSessionTime" />
 
     <ImageView
         android:id="@+id/imageViewAttendedIcon"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="16dp"
         app:layout_constraintEnd_toEndOf="@+id/textViewCurrentSession"
         app:layout_constraintStart_toStartOf="@+id/textViewCurrentSession"
-        app:layout_constraintTop_toBottomOf="@+id/textViewSessionTime"
+        app:layout_constraintTop_toBottomOf="@+id/textViewSessionTutor"
         app:srcCompat="@drawable/cross" />
 
     <TextView
@@ -218,7 +218,16 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/imageViewAttendedIcon" />
 
-
-
+    <com.budiyev.android.codescanner.CodeScannerView
+        android:id="@+id/scanner_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:autoFocusButtonColor="@color/white"
+        app:autoFocusButtonVisible="true"
+        app:flashButtonColor="@color/white"
+        app:flashButtonVisible="true"
+        app:maskColor="#74000000"
+        tools:layout_editor_absoluteX="-16dp"
+        tools:layout_editor_absoluteY="165dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
