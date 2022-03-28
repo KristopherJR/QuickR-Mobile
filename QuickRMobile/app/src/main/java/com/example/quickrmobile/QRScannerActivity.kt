@@ -3,6 +3,7 @@ package com.example.quickrmobile
 import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Typeface
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -18,6 +19,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.type.DateTime
 import org.w3c.dom.Document
+import org.w3c.dom.Text
 import java.lang.Exception
 import java.time.Duration
 import java.time.LocalDate
@@ -32,6 +34,7 @@ import java.util.regex.Pattern
 private const val CAMERA_REQUEST_CODE = 101
 private const val USERS_KEY = "users"
 private const val STUDENT_ID_KEY = "student_id"
+private const val STUDENT_NAME_KEY = "student_name"
 private const val SESSIONS_KEY = "sessions"
 private const val SESSION_ID_KEY = "session_id"
 private const val MODULE_CODE_KEY = "module_code"
@@ -51,12 +54,13 @@ private const val ACADEMIC_YEAR_START_DATE = "2021-09-20"
 private const val MINUTES_LATE_KEY = "minutes_late"
 
 // AUTHOR: Kristopher J Randle
-// VERSION: 1.20
+// VERSION: 1.22
 class QRScannerActivity : AppCompatActivity()
 {
     private lateinit var loggedInStudentID: String
 
     private lateinit var tvTextView: TextView
+    private lateinit var tvStudentNameAndNumber: TextView
     private lateinit var tvAttendancePercentage: TextView
     private lateinit var tvPunctualityPercentage: TextView
     private lateinit var tvModuleCode: TextView
@@ -94,6 +98,7 @@ class QRScannerActivity : AppCompatActivity()
         loggedInStudentID = studentDocumentSnapshot.get(STUDENT_ID_KEY).toString()
 
         tvTextView = findViewById(R.id.tvTextView)
+        tvStudentNameAndNumber = findViewById(R.id.textViewStudentNameAndNumber)
         tvAttendancePercentage = findViewById(R.id.textViewAttendancePercentage)
         tvPunctualityPercentage = findViewById(R.id.textViewPunctualityPercentage)
         tvModuleCode = findViewById(R.id.textViewModuleCode)
@@ -106,6 +111,9 @@ class QRScannerActivity : AppCompatActivity()
         scannerview.visibility = View.GONE
 
         codeScanner = CodeScanner(this, scannerview)
+
+        tvStudentNameAndNumber.text = "Welcome, " + studentDocumentSnapshot.getString(STUDENT_NAME_KEY) + " (" + studentDocumentSnapshot.get(STUDENT_ID_KEY).toString() + ")"
+        tvStudentNameAndNumber.setTypeface(null, Typeface.BOLD)
 
         initialiseMetrics()
 
