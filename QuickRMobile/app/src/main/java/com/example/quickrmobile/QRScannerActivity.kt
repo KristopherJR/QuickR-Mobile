@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -60,6 +61,9 @@ class QRScannerActivity : AppCompatActivity()
     private lateinit var loggedInStudentID: String
 
     private lateinit var tvTextView: TextView
+    private lateinit var tvAttendance: TextView
+    private lateinit var tvPunctuality: TextView
+    private lateinit var tvCurrentSession: TextView
     private lateinit var tvStudentNameAndNumber: TextView
     private lateinit var tvAttendancePercentage: TextView
     private lateinit var tvPunctualityPercentage: TextView
@@ -67,6 +71,10 @@ class QRScannerActivity : AppCompatActivity()
     private lateinit var tvSessionDate: TextView
     private lateinit var tvSessionTime: TextView
     private lateinit var tvSessionTutor: TextView
+
+    private lateinit var imageViewAttendanceIcon: ImageView
+    private lateinit var imageViewPercentageIcon: ImageView
+    private lateinit var imageViewAttendedIcon: ImageView
 
     private lateinit var scanbutton: Button
     private lateinit var scannerview: CodeScannerView
@@ -98,6 +106,9 @@ class QRScannerActivity : AppCompatActivity()
         loggedInStudentID = studentDocumentSnapshot.get(STUDENT_ID_KEY).toString()
 
         tvTextView = findViewById(R.id.tvTextView)
+        tvAttendance = findViewById(R.id.textViewAttendance)
+        tvPunctuality = findViewById(R.id.textViewPunctuality)
+        tvCurrentSession = findViewById(R.id.textViewCurrentSession)
         tvStudentNameAndNumber = findViewById(R.id.textViewStudentNameAndNumber)
         tvAttendancePercentage = findViewById(R.id.textViewAttendancePercentage)
         tvPunctualityPercentage = findViewById(R.id.textViewPunctualityPercentage)
@@ -105,6 +116,10 @@ class QRScannerActivity : AppCompatActivity()
         tvSessionDate = findViewById(R.id.textViewSessionDate)
         tvSessionTime = findViewById(R.id.textViewSessionTime)
         tvSessionTutor = findViewById(R.id.textViewSessionTutor)
+
+        imageViewAttendanceIcon = findViewById(R.id.imageViewAttendance)
+        imageViewPercentageIcon = findViewById(R.id.imageViewPunctuality)
+        imageViewAttendedIcon = findViewById(R.id.imageViewAttendedIcon)
 
         scanbutton = findViewById(R.id.scan_button)
         scannerview = findViewById(R.id.scanner_view)
@@ -121,13 +136,49 @@ class QRScannerActivity : AppCompatActivity()
             if(!scannerStarted)
             {
                 startScanner()
+                hideUIElements()
             }
             else
             {
                 onResume()
                 scannerview.visibility = View.VISIBLE
+                hideUIElements()
             }
         }
+    }
+
+    private fun hideUIElements()
+    {
+        tvAttendance.visibility = View.GONE
+        tvPunctuality.visibility = View.GONE
+        tvCurrentSession.visibility = View.GONE
+        tvStudentNameAndNumber.visibility = View.GONE
+        tvAttendancePercentage.visibility = View.GONE
+        tvPunctualityPercentage.visibility = View.GONE
+        tvModuleCode.visibility = View.GONE
+        tvSessionDate.visibility = View.GONE
+        tvSessionTime.visibility = View.GONE
+        tvSessionTutor.visibility = View.GONE
+        imageViewAttendanceIcon.visibility = View.GONE
+        imageViewPercentageIcon.visibility = View.GONE
+        imageViewAttendedIcon.visibility = View.GONE
+    }
+
+    private fun showUIElements()
+    {
+        tvAttendance.visibility = View.VISIBLE
+        tvPunctuality.visibility = View.VISIBLE
+        tvCurrentSession.visibility = View.VISIBLE
+        tvStudentNameAndNumber.visibility = View.VISIBLE
+        tvAttendancePercentage.visibility = View.VISIBLE
+        tvPunctualityPercentage.visibility = View.VISIBLE
+        tvModuleCode.visibility = View.VISIBLE
+        tvSessionDate.visibility = View.VISIBLE
+        tvSessionTime.visibility = View.VISIBLE
+        tvSessionTutor.visibility = View.VISIBLE
+        imageViewAttendanceIcon.visibility = View.VISIBLE
+        imageViewPercentageIcon.visibility = View.VISIBLE
+        imageViewAttendedIcon.visibility = View.VISIBLE
     }
 
     private fun initialiseMetrics()
@@ -146,6 +197,7 @@ class QRScannerActivity : AppCompatActivity()
             tvSessionDate.text = LocalDate.now().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)).toString()
             tvSessionTime.text = currentSessionDocumentSnapshot.getString(START_TIME_KEY) + " - " + currentSessionDocumentSnapshot.getString(END_TIME_KEY)
             tvSessionTutor.text = currentSessionDocumentSnapshot.getString(SESSION_TUTOR_KEY)
+
         }
         else
         {
@@ -201,7 +253,7 @@ class QRScannerActivity : AppCompatActivity()
                 }
                 else
                 {
-                    retrieveSessionDocuments(attendedSessionLogIds)
+                    retrieveAttendedSessionDocuments(attendedSessionLogIds)
                 }
             }
     }
@@ -209,7 +261,8 @@ class QRScannerActivity : AppCompatActivity()
     private fun retrieveAttendedSessionDocuments(ids: List<Int>)
     {
         var attendedSessionsRef = fireStore.collection(ATTENDED_SESSION_LOGS_KEY)
-        val formattedQRDate = qrDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+
+        //val formattedQRDate = qrDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
         // GET all of the active students attendance logs:
         attendedSessionsRef
             .whereIn(ATTENDED_SESSION_LOG_ID_KEY, ids)
@@ -228,13 +281,24 @@ class QRScannerActivity : AppCompatActivity()
 
                 for(document in attendedSessionDocuments)
                 {
-                    if(document.getString(DATE_ATTENDED_KEY) != formattedQRDate.toString())
+                    if(document.getString(DATE_ATTENDED_KEY) != LocalDate.now().toString())
                     {
                         // REMOVE all session logs apart from today's to filter out the data:
                         listToRemove.add(document)
                     }
                 }
                 attendedSessionDocuments.removeAll(listToRemove)
+                // CHECK to see if the student has already checked into the current session
+                if(checkDuplicateAttendance(currentSessionDocumentSnapshot))
+                {
+                    // IF they have an attendance log for the current session, update to GUI with a tick icon
+                    imageViewAttendedIcon.setImageResource(R.drawable.tick)
+                }
+                else
+                {
+                    // IF they dont have an attendance log for the current session, update to GUI with a cross icon
+                    imageViewAttendedIcon.setImageResource(R.drawable.cross)
+                }
             }
 
     }
@@ -323,6 +387,10 @@ class QRScannerActivity : AppCompatActivity()
             if (document != null) {
                 if (document.exists()) {
                     studentDocumentSnapshot = document
+
+                    // refresh the attendance log records now the student document has been refreshed
+                    attendedSessionDocuments.clear()
+                    retrieveAttendedSessionDocuments(studentDocumentSnapshot.get(ATTENDED_SESSION_LOG_IDS_KEY) as List<Int>)
                 }
             }
         }
@@ -408,7 +476,7 @@ class QRScannerActivity : AppCompatActivity()
                             {
                                 validSession = true
                                 // Student has already signed in for this session
-                                Toast.makeText(this, "You can not check-in to the same session twice!!!", Toast.LENGTH_LONG).show()
+                                Toast.makeText(this, "You can't check-in to the same session twice!", Toast.LENGTH_LONG).show()
 
                             }
                         }
@@ -441,16 +509,21 @@ class QRScannerActivity : AppCompatActivity()
             .addOnSuccessListener {
                 Toast.makeText(this, "Attendance Successfully Recorded!", Toast.LENGTH_LONG).show()
                 noAttendedSession = false
+                // update to GUI with a tick icon
+                imageViewAttendedIcon.setImageResource(R.drawable.tick)
+                // update the students attendance log records
+                val studentDocRef = fireStore.collection(USERS_KEY).document(loggedInStudentID)
+                studentDocRef.update(ATTENDED_SESSION_LOG_IDS_KEY, FieldValue.arrayUnion(newLogID))
+                // update the reference to the student document by refreshing it
+                refreshStudentDocument()
             }
             .addOnFailureListener{
                 Toast.makeText(this, "Attendance Log Could Not Be Created.", Toast.LENGTH_LONG).show()
             }
 
-        val studentDocRef = fireStore.collection(USERS_KEY).document(loggedInStudentID)
-        studentDocRef.update(ATTENDED_SESSION_LOG_IDS_KEY, FieldValue.arrayUnion(newLogID))
 
         newAttendanceLog.clear()
-        refreshStudentDocument()
+
         onPause()
     }
 
@@ -492,6 +565,7 @@ class QRScannerActivity : AppCompatActivity()
                 runOnUiThread{
 
                     scannerview.visibility = View.GONE
+                    showUIElements()
                     deconstructQRCode(it)
                 }
             }
