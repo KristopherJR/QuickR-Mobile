@@ -138,7 +138,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="50%"
+        android:text="N/A"
         app:layout_constraintEnd_toEndOf="@+id/imageViewPunctuality"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="@+id/imageViewPunctuality"
@@ -188,7 +188,7 @@
         android:layout_height="wrap_content"
 
         android:layout_marginTop="16dp"
-        android:text="50%"
+        android:text="N/A"
         app:layout_constraintEnd_toEndOf="@+id/imageViewAttendance"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="@+id/imageViewAttendance"

@@ -1,7 +1,6 @@
 package com.example.quickrmobile
 
 import android.content.ContentValues.TAG
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Typeface
 import android.os.Bundle
@@ -18,19 +17,14 @@ import com.budiyev.android.codescanner.*
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.type.DateTime
-import org.w3c.dom.Document
-import org.w3c.dom.Text
 import java.lang.Exception
 import java.time.Duration
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.temporal.ChronoUnit
 import java.util.*
-import java.util.regex.Pattern
 
 private const val CAMERA_REQUEST_CODE = 101
 private const val USERS_KEY = "users"
@@ -41,6 +35,8 @@ private const val SESSION_ID_KEY = "session_id"
 private const val MODULE_CODE_KEY = "module_code"
 private const val SESSION_TUTOR_KEY = "session_tutor"
 private const val DAY_KEY = "day"
+private const val START_WEEK_KEY = "start_week"
+private const val END_WEEK_KEY = "end_week"
 private const val START_TIME_KEY = "start_time"
 private const val END_TIME_KEY = "end_time"
 private const val ENROLLED_SESSION_IDS_KEY = "enrolled_session_ids"
@@ -193,6 +189,8 @@ class QRScannerActivity : AppCompatActivity()
     {
         if(::currentSessionDocumentSnapshot.isInitialized)
         {
+            tvAttendancePercentage.text = calculateAttendance().toString() + "%"
+            tvPunctualityPercentage.text = calculatePunctuality().toString() + "%"
             tvModuleCode.text = currentSessionDocumentSnapshot.getString(MODULE_CODE_KEY)
             tvSessionDate.text = LocalDate.now().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)).toString()
             tvSessionTime.text = currentSessionDocumentSnapshot.getString(START_TIME_KEY) + " - " + currentSessionDocumentSnapshot.getString(END_TIME_KEY)
@@ -206,6 +204,43 @@ class QRScannerActivity : AppCompatActivity()
             tvSessionTime.text = ""
             tvSessionTutor.text = ""
         }
+    }
+
+    private fun calculateAttendance(): Int
+    {
+        var totalNumberOfTimetabledSessions = 0f
+        val currentAcademicWeek = getCurrentWeek()
+
+        for (document in sessionsDocuments)
+        {
+            val sessionStartWeek = (document.get(START_WEEK_KEY) as Long)
+            // currentWeek - sessionStartWeek = expectedNumber of logs for each session
+            totalNumberOfTimetabledSessions += currentAcademicWeek - sessionStartWeek
+        }
+
+        // actualNumberOfLogs / expectedNumberOfLogs = attendance
+        val attendancePercentage = (attendedSessionDocuments.size / totalNumberOfTimetabledSessions) * 100
+
+        return attendancePercentage.toInt()
+    }
+
+    private fun calculatePunctuality() : Int
+    {
+        var numberOfLateLogs = 0f
+
+        for(document in attendedSessionDocuments)
+        {
+            // count all of the attendance logs that are marked as 'late'
+            if(document.get(LATE_KEY) as Boolean)
+            {
+                numberOfLateLogs++
+            }
+        }
+
+        // Punctuality = (number of late logs / total logs) * 100
+        val punctualityPercentage = (numberOfLateLogs / attendedSessionDocuments.size) * 100
+
+        return punctualityPercentage.toInt()
     }
 
     private fun retrieveSessionDocuments(ids: List<Int>)
@@ -241,7 +276,7 @@ class QRScannerActivity : AppCompatActivity()
 
                         }
 
-                        updateMetrics()
+
                     }
                 }
 
@@ -277,22 +312,18 @@ class QRScannerActivity : AppCompatActivity()
                 Log.w(TAG, "Error getting documents: ", exception)
             }
             .addOnCompleteListener {
-                val listToRemove = mutableListOf<DocumentSnapshot>()
 
-                for(document in attendedSessionDocuments)
-                {
-                    if(document.getString(DATE_ATTENDED_KEY) != LocalDate.now().toString())
-                    {
-                        // REMOVE all session logs apart from today's to filter out the data:
-                        listToRemove.add(document)
-                    }
-                }
-                attendedSessionDocuments.removeAll(listToRemove)
+                updateMetrics()
+
                 // CHECK to see if the student has already checked into the current session
-                if(checkDuplicateAttendance(currentSessionDocumentSnapshot))
+                if(::currentSessionDocumentSnapshot.isInitialized)
                 {
-                    // IF they have an attendance log for the current session, update to GUI with a tick icon
-                    imageViewAttendedIcon.setImageResource(R.drawable.tick)
+                    if(checkDuplicateAttendance(currentSessionDocumentSnapshot))
+                    {
+                        // IF they have an attendance log for the current session, update to GUI with a tick icon
+                        imageViewAttendedIcon.setImageResource(R.drawable.tick)
+                    }
+
                 }
                 else
                 {
