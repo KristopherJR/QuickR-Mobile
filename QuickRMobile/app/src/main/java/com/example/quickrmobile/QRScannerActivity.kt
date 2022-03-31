@@ -439,8 +439,11 @@ class QRScannerActivity : AppCompatActivity()
             // CHECK if the student has already created an attendance log for the session they just scanned today
             if(document.get(SESSION_ID_KEY)  == attendedSession.get(SESSION_ID_KEY))
             {
-                // IF it matches, the user has already logged their attendance for this session once
-                alreadyLoggedAttendance = true
+                if(document.get(DATE_ATTENDED_KEY).toString() == LocalDate.now().toString())
+                {
+                    // IF it matches, the user has already logged their attendance for this session once
+                    alreadyLoggedAttendance = true
+                }
             }
         }
 
