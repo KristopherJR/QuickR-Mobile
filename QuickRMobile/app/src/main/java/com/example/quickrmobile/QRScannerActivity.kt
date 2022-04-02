@@ -181,16 +181,19 @@ class QRScannerActivity : AppCompatActivity()
     {
         // RETRIEVE the enrolled session ids for the student:
         val enrolledSessionIds: List<Int> = studentDocumentSnapshot.get(ENROLLED_SESSION_IDS_KEY) as List<Int> // this works!! - retrieves List<Int> = [1,2,3,4]
+
         // GET all of the SESSION documents that the USER is enrolled on
         retrieveSessionDocuments(enrolledSessionIds)
     }
 
     private fun updateMetrics()
     {
+        tvAttendancePercentage.text = calculateAttendance().toString() + "%"
+        tvPunctualityPercentage.text = calculatePunctuality().toString() + "%"
+
         if(::currentSessionDocumentSnapshot.isInitialized)
         {
-            tvAttendancePercentage.text = calculateAttendance().toString() + "%"
-            tvPunctualityPercentage.text = calculatePunctuality().toString() + "%"
+
             tvModuleCode.text = currentSessionDocumentSnapshot.getString(MODULE_CODE_KEY)
             tvSessionDate.text = LocalDate.now().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)).toString()
             tvSessionTime.text = currentSessionDocumentSnapshot.getString(START_TIME_KEY) + " - " + currentSessionDocumentSnapshot.getString(END_TIME_KEY)
