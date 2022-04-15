@@ -52,6 +52,7 @@ private const val MINUTES_LATE_KEY = "minutes_late"
 
 // AUTHOR: Kristopher J Randle
 // VERSION: 1.24
+// CodeScanner Author: yuriy-budiyev - https://github.com/yuriy-budiyev/code-scanner
 class QRScannerActivity : AppCompatActivity()
 {
     private lateinit var loggedInStudentID: String
