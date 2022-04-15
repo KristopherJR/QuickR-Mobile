@@ -51,7 +51,7 @@ private const val ACADEMIC_YEAR_START_DATE = "2021-09-20"
 private const val MINUTES_LATE_KEY = "minutes_late"
 
 // AUTHOR: Kristopher J Randle
-// VERSION: 1.22
+// VERSION: 1.24
 class QRScannerActivity : AppCompatActivity()
 {
     private lateinit var loggedInStudentID: String
